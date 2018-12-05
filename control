@@ -1,0 +1,9 @@
+Package: com.muirey03.cr4shed
+Name: Cr4shed
+Depends: mobilesubstrate
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: More useful crash logs at /var/mobile/error_log.log
+Maintainer: Muirey03
+Author: Muirey03
+Section: Tweaks
