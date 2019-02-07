@@ -1,6 +1,9 @@
+#include <AppSupport/CPDistributedMessagingCenter.h>
+#import <rocketbootstrap/rocketbootstrap.h>
+
 @import ObjectiveC.objc_exception; //contains objc_exception_throw
 
-/* Gets the parent symbol of the crash (essentially the method that caused the crash): */
+/* Gets the parent symbol of the crash (usually the method that caused the crash): */
 static NSString* getLastSymbol()
 {
     NSString* lastSymbol = [NSThread callStackSymbols][3];
@@ -30,18 +33,28 @@ static NSString* getLastSymbol()
     return [lastSymbol stringByReplacingCharactersInRange:NSMakeRange(startI, endI - startI) withString:@" - "];
 }
 
+static void writeStringToFile(NSString* str, NSString* path)
+{
+    CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
+    rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
+    [messagingCenter sendMessageName:@"writeString" userInfo:@{@"string" : str, @"path" : path}];
+}
+
 static void createCrashLog(NSException* e)
 {
     // Format the contents of the new crahs log:
     NSString* lastSymbol = getLastSymbol();
-    NSString* currentProcess = [NSBundle mainBundle].bundleIdentifier;
+    NSString* processID = [NSBundle mainBundle].bundleIdentifier;
+    NSString* processName = [[NSProcessInfo processInfo] processName];
     NSString* errorMessage = [NSString stringWithFormat:@"Date: %@\n"
+                                                        @"Process: %@\n"
                                                         @"Bundle id: %@\n"
                                                         @"Exception type: %@\n"
                                                         @"Reason: %@\n"
                                                         @"Parent symbol: %@",
                                                         [NSDate date],
-                                                        currentProcess,
+                                                        processName,
+                                                        processID,
                                                         e.name,
                                                         e.reason,
                                                         lastSymbol];
@@ -64,7 +77,7 @@ static void createCrashLog(NSException* e)
         path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@ (%d).log", dateStr, i];
 
     // Create the crash log
-    [errorMessage writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:nil];
+    writeStringToFile(errorMessage, path);
 }
 
 // Called everytime a NSException is thrown
