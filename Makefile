@@ -1,3 +1,5 @@
+GO_EASY_ON_ME=1
+
 ARCHS = armv7 arm64
 
 include $(THEOS)/makefiles/common.mk
@@ -14,4 +16,5 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 after-install::
 	install.exec "killall -9 backboardd"
 SUBPROJECTS += cr4shedsb
+SUBPROJECTS += cr4shedgui
 include $(THEOS_MAKE_PATH)/aggregate.mk

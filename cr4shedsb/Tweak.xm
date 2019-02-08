@@ -26,6 +26,7 @@
         [messagingCenter runServerOnCurrentThread];
 
 		[messagingCenter registerForMessageName:@"writeString" target:self selector:@selector(writeString:withUserInfo:)];
+        [messagingCenter registerForMessageName:@"deleteFile" target:self selector:@selector(deleteFile:withUserInfo:)];
 	}
 
 	return self;
@@ -36,6 +37,13 @@
     NSString* str = userInfo[@"string"];
     NSString* path = userInfo[@"path"];
     [str writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:nil];
+    return nil;
+}
+
+-(NSDictionary*)deleteFile:(NSString*)name withUserInfo:(NSDictionary*)userInfo
+{
+    NSString* path = userInfo[@"path"];
+    [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
     return nil;
 }
 @end
