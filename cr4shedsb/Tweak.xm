@@ -1,5 +1,6 @@
 #include <AppSupport/CPDistributedMessagingCenter.h>
 #import <rocketbootstrap/rocketbootstrap.h>
+#import "bulletin.h"
 
 @interface Cr4shedServer : NSObject
 @end
@@ -26,7 +27,8 @@
         [messagingCenter runServerOnCurrentThread];
 
 		[messagingCenter registerForMessageName:@"writeString" target:self selector:@selector(writeString:withUserInfo:)];
-        [messagingCenter registerForMessageName:@"deleteFile" target:self selector:@selector(deleteFile:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"createDir" target:self selector:@selector(createDir:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"sendNotification" target:self selector:@selector(sendNotification:withUserInfo:)];
 	}
 
 	return self;
@@ -40,10 +42,30 @@
     return nil;
 }
 
--(NSDictionary*)deleteFile:(NSString*)name withUserInfo:(NSDictionary*)userInfo
+-(NSDictionary*)createDir:(NSString*)name withUserInfo:(NSDictionary*)userInfo
 {
     NSString* path = userInfo[@"path"];
-    [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+    BOOL success = [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:nil error:nil];
+    return @{@"success" : @(success)};
+}
+
+-(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo
+{
+    NSString* content = userInfo[@"content"];
+	NSString* sectionID = @"com.muirey03.cr4shedgui";
+	BBBulletin* bulletin = [[%c(BBBulletin) alloc] init];
+
+    bulletin.title = @"Cr4shed";
+    bulletin.message = content;
+    bulletin.sectionID = sectionID;
+    bulletin.bulletinID = [[NSProcessInfo processInfo] globallyUniqueString];
+    bulletin.recordID = [[NSProcessInfo processInfo] globallyUniqueString];
+    bulletin.publisherBulletinID = [[NSProcessInfo processInfo] globallyUniqueString];
+    bulletin.date = [NSDate date];
+    bulletin.defaultAction = [%c(BBAction) actionWithLaunchBundleID:sectionID callblock:nil];
+    SBLockScreenNotificationListController* listController=([[%c(UIApplication) sharedApplication] respondsToSelector:@selector(notificationDispatcher)] && [[[%c(UIApplication) sharedApplication] notificationDispatcher] respondsToSelector:@selector(notificationSource)]) ? [[[%c(UIApplication) sharedApplication] notificationDispatcher] notificationSource]  : [[[%c(SBLockScreenManager) sharedInstanceIfExists] lockScreenViewController] valueForKey:@"notificationController"];
+    [listController observer:[listController valueForKey:@"observer"] addBulletin:bulletin forFeed:14];
+
     return nil;
 }
 @end
@@ -52,3 +74,20 @@
 {
     [Cr4shedServer load];
 }
+
+#pragma mark Testing
+#if 0
+@interface SpringBoard
+-(void)crash;
+@end
+
+%hook SpringBoard
+-(void)applicationDidFinishLaunching:(id)arg1
+{
+    %orig;
+    //@try {
+    [self crash];
+    //} @catch (NSException* e) {}
+}
+%end
+#endif

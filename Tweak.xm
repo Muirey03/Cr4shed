@@ -1,38 +1,8 @@
 #include <AppSupport/CPDistributedMessagingCenter.h>
 #import <rocketbootstrap/rocketbootstrap.h>
-@import ObjectiveC.objc_exception; //contains objc_exception_throw
+#import "symbolication.h"
 
 #define isSB [[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"]
-
-/* Gets the parent symbol of the crash (usually the method that caused the crash): */
-static NSString* getLastSymbol()
-{
-    NSString* lastSymbol = [NSThread callStackSymbols][3];
-    lastSymbol = [lastSymbol substringWithRange:NSMakeRange(4, lastSymbol.length - 4)];
-
-    int startI = 0;
-    int endI = 0;
-    for (int i = 0; i < lastSymbol.length; i++)
-    {
-        char c = [lastSymbol characterAtIndex:i];
-        if (c == ' ')
-        {
-            if (!startI)
-            {
-                startI = i;
-            }
-        }
-        else
-        {
-            if (startI)
-            {
-                endI = i;
-                break;
-            }
-        }
-    }
-    return [lastSymbol stringByReplacingCharactersInRange:NSMakeRange(startI, endI - startI) withString:@" - "];
-}
 
 static void writeStringToFile(NSString* str, NSString* path)
 {
@@ -48,48 +18,128 @@ static void writeStringToFile(NSString* str, NSString* path)
     }
 }
 
-static void deleteFile(NSString* path)
+static BOOL createDir(NSString* path)
 {
     if (isSB || [[NSFileManager defaultManager] isWritableFileAtPath:path])
     {
-        [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+        return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:nil error:nil];
+    }
+    CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
+    rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
+    NSDictionary* reply = [messagingCenter sendMessageAndReceiveReplyName:@"createDir" userInfo:@{@"path" : path}];
+    return [reply[@"success"] boolValue];
+}
+
+static NSString* getCallStack(NSException* e)
+{
+    NSArray* symbols = symbolicatedCallStack(e);
+    NSString* symbolStr = [symbols componentsJoinedByString:@"\n"];
+    return symbolStr;
+}
+
+static NSString* getImage(NSString* symbol)
+{
+    int startingI = -1;
+    int endingI = -1;
+    for (int i = 0; i < symbol.length - 1; i++)
+    {
+        char c = [symbol characterAtIndex:i];
+        char nextC = [symbol characterAtIndex:i+1];
+        if (startingI == -1)
+        {
+            if (c == ' ' && nextC != ' ')
+            {
+                startingI = i+1;
+            }
+        }
+        else
+        {
+            if (nextC == ' ')
+            {
+                endingI = i+1;
+                break;
+            }
+        }
+    }
+    return [symbol substringWithRange:NSMakeRange(startingI, endingI-startingI)];
+}
+
+static NSString* determineCulprit(NSException* e)
+{
+    NSArray* symbols = [e callStackSymbols];
+    for (int i = 0; i < symbols.count; i++)
+    {
+        NSString* symbol = symbols[i];
+        NSString* image = getImage(symbol);
+        if (![image isEqualToString:@"Cr4shed.dylib"])
+        {
+            if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image]])
+                return image;
+        }
+    }
+    return @"Unknown";
+}
+
+inline NSString* deviceVersion()
+{
+    return [[UIDevice currentDevice] systemVersion];
+}
+
+inline NSString* deviceName()
+{
+    return (__bridge NSString*)MGCopyAnswer(CFSTR("marketing-name"));
+}
+
+@interface Cr4shedServer : NSObject
++ (id)sharedInstance;
+-(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
+@end
+
+void sendNotification(NSString* content)
+{
+    if (isSB)
+    {
+        [[%c(Cr4shedServer) sharedInstance] sendNotification:nil withUserInfo:@{@"content" : content}];
     }
     else
     {
         CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
         rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
-        [messagingCenter sendMessageName:@"deleteFile" userInfo:@{@"path" : path}];
+        [messagingCenter sendMessageName:@"sendNotification" userInfo:@{@"content" : content}];
     }
 }
 
 static NSString* createCrashLog(NSException* e)
 {
     // Format the contents of the new crash log:
-    NSString* lastSymbol = getLastSymbol();
+    NSString* stackSymbols = getCallStack(e);
     NSString* processID = [NSBundle mainBundle].bundleIdentifier;
     NSString* processName = [[NSProcessInfo processInfo] processName];
-
-    //wtaf coreduetd?!
-    if ([processID isEqualToString:@"com.apple.coreduetd"]) return nil;
+    NSString* culprit = determineCulprit(e);
+    NSString* device = [NSString stringWithFormat:@"%@, iOS %@", deviceName(), deviceVersion()];
 
     NSString* errorMessage = [NSString stringWithFormat:@"Date: %@\n"
                                                         @"Process: %@\n"
                                                         @"Bundle id: %@\n"
                                                         @"Exception type: %@\n"
                                                         @"Reason: %@\n"
-                                                        @"Parent symbol: %@",
+                                                        @"Culprit: %@\n"
+                                                        @"Device: %@\n"
+                                                        @"Call stack:\n%@",
                                                         [NSDate date],
                                                         processName,
                                                         processID,
                                                         e.name,
                                                         e.reason,
-                                                        lastSymbol];
+                                                        culprit,
+                                                        device,
+                                                        stackSymbols];
 
     // Create the dir if it doesn't exist already:
     BOOL isDir;
     BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/tmp/crash_logs" isDirectory:&isDir];
     if (!dirExists)
-        isDir = [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:@"/var/tmp/crash_logs"] withIntermediateDirectories:YES attributes:nil error:nil];
+        isDir = createDir(@"/var/tmp/crash_logs");
     if (!isDir) return nil; //should never happen, but just in case
 
     // Get the date to use for the filename:
@@ -105,36 +155,35 @@ static NSString* createCrashLog(NSException* e)
     // Create the crash log
     writeStringToFile(errorMessage, path);
 
+    //show notification: TODO:
+    sendNotification([NSString stringWithFormat:@"%@ crashed at %@", processName, [NSDate date]]);
+
     return path;
 }
 
-// Called everytime a NSException is thrown
-%hookf (void, objc_exception_throw, NSException* e)
+/* add the exception handler: */
+static NSUncaughtExceptionHandler* oldHandler;
+
+__unused void unhandledExceptionHandler(NSException* e)
 {
-    __block NSString* path = createCrashLog(e);
-    if (path)
+    createCrashLog(e);
+    if (oldHandler)
     {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            //exception was caught, delete log:
-            deleteFile(path);
-        });
+        oldHandler(e);
+    }
+}
+
+%hookf (void, NSSetUncaughtExceptionHandler, NSUncaughtExceptionHandler* handler)
+{
+    if (handler != &unhandledExceptionHandler)
+    {
+        oldHandler = handler;
+        return;
     }
     %orig;
 }
 
-#pragma mark Testing
-#if 0
-@interface SpringBoard
--(void)crash;
-@end
-
-%hook SpringBoard
--(void)applicationDidFinishLaunching:(id)arg1
+%ctor
 {
-    %orig;
-    //@try {
-    [self crash];
-    //} @catch (NSException* e) {}
+    NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
 }
-%end
-#endif
