@@ -1,6 +1,7 @@
+@import WebKit;
 @interface CRALogController : UIViewController <UIGestureRecognizerDelegate>
 {
-    UIWebView* webView;
+    WKWebView* webView;
     NSString* logMessage;
 }
 @property (nonatomic, retain) NSString* log;

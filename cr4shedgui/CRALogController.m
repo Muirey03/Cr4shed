@@ -27,7 +27,7 @@
     UIBarButtonItem* shareButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(share:)];
     self.navigationItem.rightBarButtonItem = shareButton;
 
-    webView = [UIWebView new];
+    webView = [WKWebView new];
     webView.scrollView.bounces = NO;
     NSString* path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", _log];
     logMessage = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:NULL];

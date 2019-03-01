@@ -4,7 +4,7 @@ include $(THEOS)/makefiles/common.mk
 
 APPLICATION_NAME = Cr4shed
 Cr4shed_FILES = $(wildcard *.m)
-Cr4shed_FRAMEWORKS = UIKit CoreGraphics
+Cr4shed_FRAMEWORKS = UIKit CoreGraphics WebKit
 Cr4shed_CFLAGS = -fobjc-arc
 Cr4shed_CODESIGN_FLAGS = -Sent.xml
 
