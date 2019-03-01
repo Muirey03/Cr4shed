@@ -155,7 +155,7 @@ static NSString* createCrashLog(NSException* e)
     // Create the crash log
     writeStringToFile(errorMessage, path);
 
-    //show notification: TODO:
+    //show notification:
     sendNotification([NSString stringWithFormat:@"%@ crashed at %@", processName, [NSDate date]]);
 
     return path;

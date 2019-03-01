@@ -1,6 +1,6 @@
 Package: com.muirey03.cr4shed
 Name: Cr4shed
-Depends: mobilesubstrate, com.rpetrich.rocketbootstrap (>= 1.0.2) | firmware (<< 7.0)
+Depends: mobilesubstrate, com.rpetrich.rocketbootstrap (>= 1.0.2) | firmware (<< 7.0), net.limneos.libbulletin (>= 0.1-145)
 Version: 2.0
 Architecture: iphoneos-arm
 Description: More useful crash logs

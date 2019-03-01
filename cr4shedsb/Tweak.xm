@@ -1,6 +1,6 @@
 #include <AppSupport/CPDistributedMessagingCenter.h>
 #import <rocketbootstrap/rocketbootstrap.h>
-#import "bulletin.h"
+#import <libbulletin/JBBulletinManager.h>
 
 @interface Cr4shedServer : NSObject
 @end
@@ -52,20 +52,9 @@
 -(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo
 {
     NSString* content = userInfo[@"content"];
-	NSString* sectionID = @"com.muirey03.cr4shedgui";
-	BBBulletin* bulletin = [[%c(BBBulletin) alloc] init];
-
-    bulletin.title = @"Cr4shed";
-    bulletin.message = content;
-    bulletin.sectionID = sectionID;
-    bulletin.bulletinID = [[NSProcessInfo processInfo] globallyUniqueString];
-    bulletin.recordID = [[NSProcessInfo processInfo] globallyUniqueString];
-    bulletin.publisherBulletinID = [[NSProcessInfo processInfo] globallyUniqueString];
-    bulletin.date = [NSDate date];
-    bulletin.defaultAction = [%c(BBAction) actionWithLaunchBundleID:sectionID callblock:nil];
-    SBLockScreenNotificationListController* listController=([[%c(UIApplication) sharedApplication] respondsToSelector:@selector(notificationDispatcher)] && [[[%c(UIApplication) sharedApplication] notificationDispatcher] respondsToSelector:@selector(notificationSource)]) ? [[[%c(UIApplication) sharedApplication] notificationDispatcher] notificationSource]  : [[[%c(SBLockScreenManager) sharedInstanceIfExists] lockScreenViewController] valueForKey:@"notificationController"];
-    [listController observer:[listController valueForKey:@"observer"] addBulletin:bulletin forFeed:14];
-
+	NSString* bundleID = @"com.muirey03.cr4shedgui";
+	NSString* title = @"Cr4shed";
+	[[JBBulletinManager sharedInstance] showBulletinWithTitle:title message:content bundleID:bundleID];
     return nil;
 }
 @end

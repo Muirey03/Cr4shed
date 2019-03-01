@@ -1,6 +1,6 @@
 @interface CRALogController : UIViewController <UIGestureRecognizerDelegate>
 {
-    UITextView* textView;
+    UIWebView* webView;
     NSString* logMessage;
 }
 @property (nonatomic, retain) NSString* log;

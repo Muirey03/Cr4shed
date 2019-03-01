@@ -9,7 +9,7 @@ Cr4shed_FILES = $(wildcard *.m *.xm)
 Cr4shed_FRAMEWORKS = UIKit
 Cr4shed_CFLAGS = -fobjc-arc
 Cr4shed_PRIVATE_FRAMEWORKS = AppSupport CoreSymbolication
-Cr4shed_LIBRARIES = rocketbootstrap MobileGestalt
+Cr4shed_LIBRARIES = rocketbootstrap MobileGestalt bulletin
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

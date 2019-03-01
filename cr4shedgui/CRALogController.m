@@ -1,4 +1,5 @@
 #import "CRALogController.h"
+#import "NSString+HTML.h"
 
 @implementation CRALogController
 -(id)initWithLog:(NSString*)logFile
@@ -26,19 +27,23 @@
     UIBarButtonItem* shareButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(share:)];
     self.navigationItem.rightBarButtonItem = shareButton;
 
-    textView = [UITextView new];
-    textView.editable = NO;
+    webView = [UIWebView new];
+    webView.scrollView.bounces = NO;
     NSString* path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", _log];
     logMessage = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:NULL];
-    textView.text = logMessage;
-    textView.alwaysBounceVertical = YES;
-    [self.view addSubview:textView];
 
-    textView.translatesAutoresizingMaskIntoConstraints = NO;
-    [textView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor].active = YES;
-    [textView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;
-    [textView.topAnchor constraintEqualToAnchor:self.view.topAnchor].active = YES;
-    [textView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor].active = YES;
+    NSString* htmlString =  @"<html><head><title>.</title><meta name='viewport' content='initial-scale=1.0,maximum-scale=3.0'/></head><body><pre style=\"font-size:8pt;\">%@</pre></body></html>";
+    NSString* formattedStr = [logMessage kv_encodeHTMLCharacterEntities];
+    htmlString = [NSString stringWithFormat:htmlString, formattedStr];
+    [self.view addSubview:webView];
+
+    webView.translatesAutoresizingMaskIntoConstraints = NO;
+    [webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor].active = YES;
+    [webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;
+    [webView.topAnchor constraintEqualToAnchor:self.view.topAnchor].active = YES;
+    [webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor].active = YES;
+
+    [webView loadHTMLString:htmlString baseURL:nil];
 }
 
 -(void)viewDidAppear:(BOOL)arg1
