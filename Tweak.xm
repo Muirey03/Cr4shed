@@ -145,8 +145,8 @@ static void createCrashLog(NSException* e)
     BOOL isDir;
     BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/tmp/crash_logs" isDirectory:&isDir];
     if (!dirExists)
-        isDir = createDir(@"/var/tmp/crash_logs");
-    if (!isDir) return; //should never happen, but just in case
+        dirExists = createDir(@"/var/tmp/crash_logs");
+    if (!dirExists) return; //should never happen, but just in case
 
     // Get the date to use for the filename:
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
