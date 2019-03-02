@@ -144,9 +144,10 @@ static void createCrashLog(NSException* e)
     // Create the dir if it doesn't exist already:
     BOOL isDir;
     BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/tmp/crash_logs" isDirectory:&isDir];
-    if (!dirExists)
+    if (!dirExists) {
         dirExists = createDir(@"/var/tmp/crash_logs");
-    if (!dirExists) return; //should never happen, but just in case
+        if (!dirExists) return; //should never happen, but just in case
+    }
 
     // Get the date to use for the filename:
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
