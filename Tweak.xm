@@ -170,7 +170,11 @@ static NSUncaughtExceptionHandler* oldHandler;
 
 __unused void unhandledExceptionHandler(NSException* e)
 {
-    createCrashLog(e);
+    @try
+    {
+        createCrashLog(e);
+    }
+    @catch (NSException* ex) {}
     if (oldHandler)
     {
         oldHandler(e);
