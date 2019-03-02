@@ -1,1 +1,1 @@
-{ Filter = { Bundles = ( "com.apple.Security" ); }; }
+{ Filter = { Bundles = ( "com.apple.CoreFoundation" ); }; }

@@ -109,7 +109,7 @@ void sendNotification(NSString* content)
     }
 }
 
-static NSString* createCrashLog(NSException* e)
+static void createCrashLog(NSException* e)
 {
     // Format the contents of the new crash log:
     NSString* stackSymbols = getCallStack(e);
@@ -117,6 +117,12 @@ static NSString* createCrashLog(NSException* e)
     NSString* processName = [[NSProcessInfo processInfo] processName];
     NSString* culprit = determineCulprit(e);
     NSString* device = [NSString stringWithFormat:@"%@, iOS %@", deviceName(), deviceVersion()];
+
+    /* Remove false positives: */
+    if ([e.reason containsString:@"optimistic locking failure"])
+        return;
+    if ([e.reason containsString:@"This NSPersistentStoreCoordinator has no persistent stores"])
+        return;
 
     NSString* errorMessage = [NSString stringWithFormat:@"Date: %@\n"
                                                         @"Process: %@\n"
@@ -140,7 +146,7 @@ static NSString* createCrashLog(NSException* e)
     BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/tmp/crash_logs" isDirectory:&isDir];
     if (!dirExists)
         isDir = createDir(@"/var/tmp/crash_logs");
-    if (!isDir) return nil; //should never happen, but just in case
+    if (!isDir) return; //should never happen, but just in case
 
     // Get the date to use for the filename:
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
@@ -157,8 +163,6 @@ static NSString* createCrashLog(NSException* e)
 
     //show notification:
     sendNotification([NSString stringWithFormat:@"%@ crashed at %@", processName, [NSDate date]]);
-
-    return path;
 }
 
 /* add the exception handler: */
