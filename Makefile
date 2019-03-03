@@ -17,4 +17,5 @@ after-install::
 	install.exec "killall -9 backboardd"
 SUBPROJECTS += cr4shedsb
 SUBPROJECTS += cr4shedgui
+SUBPROJECTS += postinst
 include $(THEOS_MAKE_PATH)/aggregate.mk

@@ -181,6 +181,7 @@ __unused void unhandledExceptionHandler(NSException* e)
     }
 }
 
+%group Tweak
 %hookf (void, NSSetUncaughtExceptionHandler, NSUncaughtExceptionHandler* handler)
 {
     if (handler != &unhandledExceptionHandler)
@@ -190,8 +191,40 @@ __unused void unhandledExceptionHandler(NSException* e)
     }
     %orig;
 }
+%end
+
+inline BOOL isBlacklisted(NSString* procName)
+{
+    NSArray<NSString*>* blacklisted = @[
+        @"ReportCrash",
+        @"ProtectedCloudKeySyncing",
+        @"gssc",
+        @"awdd",
+        @"biometrickitd",
+        @"spindump",
+        @"keybagd",
+        @"ReportMemoryException",
+        @"nsurlsessiond",
+        @"locationd",
+        @"coreduetd",
+        @"mDNSResponder",
+        @"hangreporter",
+        @"nanoregistrylaunchd",
+        @"nanoregistryd"
+    ];
+    for (NSString* bannedProc in blacklisted)
+    {
+        if ([procName isEqualToString:bannedProc])
+            return YES;
+    }
+    return NO;
+}
 
 %ctor
 {
-    NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
+    if (!isBlacklisted([[NSProcessInfo processInfo] processName]))
+    {
+        %init(Tweak);
+        NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
+    }
 }
