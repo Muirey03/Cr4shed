@@ -4,9 +4,25 @@
 #include <mach-o/loader.h>
 #include <libsymbolicate/CoreSymbolication.h>
 
-inline NSString* getArch()
+inline CSArchitecture getArch(const char* path)
 {
-    return (__bridge NSString*)MGCopyAnswer(kMGCPUArchitecture);
+    CSArchitecture arch;
+    uint32_t count = _dyld_image_count();
+    const struct mach_header* header = NULL;
+    for (int i = 0; i < count; i++)
+    {
+        if (strcmp(_dyld_get_image_name(i), path) == 0)
+        {
+            header = _dyld_get_image_header(i);
+            break;
+        }
+    }
+    if (header)
+    {
+        arch.cpu_type = header->cputype;
+        arch.cpu_subtype = header->cpusubtype;
+    }
+    return arch;
 }
 
 static NSString* executableUUID(const char* path)
@@ -41,35 +57,6 @@ static NSString* executableUUID(const char* path)
     return nil;
 }
 
-static CSArchitecture architectureForName(const char *name) {
-    CSArchitecture arch;
-
-    if (strcmp(name, "arm64") == 0) {
-        arch.cpu_type = CPU_TYPE_ARM64;
-        arch.cpu_subtype = CPU_SUBTYPE_ARM64_ALL;
-    } else if (
-            (strcmp(name, "armv7s") == 0) ||
-            (strcmp(name, "armv7k") == 0) ||
-            (strcmp(name, "armv7f") == 0)) {
-        arch.cpu_type = CPU_TYPE_ARM;
-        arch.cpu_subtype = CPU_SUBTYPE_ARM_V7S;
-    } else if (strcmp(name, "armv7") == 0) {
-        arch.cpu_type = CPU_TYPE_ARM;
-        arch.cpu_subtype = CPU_SUBTYPE_ARM_V7;
-    } else if (strcmp(name, "armv6") == 0) {
-        arch.cpu_type = CPU_TYPE_ARM;
-        arch.cpu_subtype = CPU_SUBTYPE_ARM_V6;
-    } else if (strcmp(name, "arm") == 0) {
-        arch.cpu_type = CPU_TYPE_ARM;
-        arch.cpu_subtype = CPU_SUBTYPE_ARM_ALL;
-    } else {
-        arch.cpu_type = 0;
-        arch.cpu_subtype = 0;
-    }
-
-    return arch;
-}
-
 // NOTE: CFUUIDCreateFromString() does not support unhyphenated UUID strings.
 //       UUID must be hyphenated, must follow pattern "8-4-4-4-12".
 static CFUUIDRef CFUUIDCreateFromUnformattedCString(const char* uuidStr) {
@@ -88,7 +75,7 @@ static CFUUIDRef CFUUIDCreateFromUnformattedCString(const char* uuidStr) {
 static CSSymbolicatorRef symbolicator(const char* path)
 {
     CSSymbolicatorRef symb;
-    CSArchitecture arch = architectureForName([getArch() UTF8String]);
+    CSArchitecture arch = getArch(path);
     if (arch.cpu_type != 0)
     {
         symb = CSSymbolicatorCreateWithPathAndArchitecture(path, arch);
@@ -142,13 +129,12 @@ NSString* nameForSymbol(NSNumber* addrNum)
     return nil;
 }
 
-NSArray* symbolicatedCallStack(NSException* e)
+NSArray* symbolicatedStackSymbols(NSArray* callStackSymbols, NSArray* callStackReturnAddresses)
 {
-    NSMutableArray* symArr = [e.callStackSymbols mutableCopy];
-    NSArray* addresses = e.callStackReturnAddresses;
-    for (int i = 0; i < addresses.count; i++)
+    NSMutableArray* symArr = [callStackSymbols mutableCopy];
+    for (int i = 0; i < callStackReturnAddresses.count; i++)
     {
-        NSString* symName = nameForSymbol(addresses[i]);
+        NSString* symName = nameForSymbol(callStackReturnAddresses[i]);
         if (symName)
         {
             NSMutableArray* components = [[symArr[i] componentsSeparatedByString:@" "] mutableCopy];
@@ -162,4 +148,11 @@ NSArray* symbolicatedCallStack(NSException* e)
         }
     }
     return [symArr copy];
+}
+
+NSArray* symbolicatedCallStack(NSException* e)
+{
+    NSArray* symArr = e.callStackSymbols;
+    NSArray* addresses = e.callStackReturnAddresses;
+    return symbolicatedStackSymbols(symArr, addresses);
 }

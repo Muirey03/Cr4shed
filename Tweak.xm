@@ -82,7 +82,12 @@ static NSString* determineCulprit(NSException* e)
 
 inline NSString* deviceVersion()
 {
-    return [[UIDevice currentDevice] systemVersion];
+    NSString* systemVersion = (__bridge NSString*)MGCopyAnswer(CFSTR("ProductVersion"));
+    if (systemVersion != nil)
+    {
+        return systemVersion;
+    }
+    return @"Unknown";
 }
 
 inline NSString* deviceName()
@@ -210,7 +215,11 @@ inline BOOL isBlacklisted(NSString* procName)
         @"mDNSResponder",
         @"hangreporter",
         @"nanoregistrylaunchd",
-        @"nanoregistryd"
+        @"nanoregistryd",
+        @"mobilewatchdog",
+        @"misd",
+        @"dasd",
+        @"passd"
     ];
     for (NSString* bannedProc in blacklisted)
     {
