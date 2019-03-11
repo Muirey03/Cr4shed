@@ -1,6 +1,7 @@
 #import "CRARootViewController.h"
 #import "CRAProcViewController.h"
 #import "Process.h"
+#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
 
 @implementation Process
 -(id)init
@@ -52,14 +53,28 @@
 {
 	[super loadView];
 
-	[self loadLogs];
-
 	self.title = @"Cr4shed";
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
 	//remove extra separators
 	self.tableView.tableFooterView = [UIView new];
 	self.tableView.rowHeight = 50;
+
+	//pull to refresh:
+	UIRefreshControl* refreshControl = [[UIRefreshControl alloc]init];
+    [refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
+	if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"10.0")) {
+        self.tableView.refreshControl = refreshControl;
+    } else {
+        [self.tableView addSubview:refreshControl];
+    }
+}
+
+-(void)refreshTable:(UIRefreshControl*)control
+{
+	[self loadLogs];
+	[self.tableView reloadData];
+	[control endRefreshing];
 }
 
 -(void)viewDidAppear:(BOOL)arg1
@@ -72,6 +87,16 @@
 -(void)viewWillAppear:(BOOL)arg1
 {
 	[super viewWillAppear:arg1];
+
+	//UIApplicationDidBecomeActiveNotification
+	static void (^handler)(void) = nil;
+	if (handler) [[NSNotificationCenter defaultCenter] removeObserver:handler];
+	handler = ^{
+		[self loadLogs];
+		[self.tableView reloadData];
+	};
+	[[NSNotificationCenter defaultCenter] addObserver:handler selector:@selector(invoke) name:UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
+
 	[self sortProcs];
 	[self.tableView reloadData];
 }
