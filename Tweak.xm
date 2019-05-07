@@ -172,17 +172,25 @@ static void createCrashLog(NSException* e)
 
 /* add the exception handler: */
 static NSUncaughtExceptionHandler* oldHandler;
+static BOOL hasCrashed = NO;
 
 __unused void unhandledExceptionHandler(NSException* e)
 {
+    if (hasCrashed)
+        abort();
+    else
+        hasCrashed = YES;
     @try
     {
         createCrashLog(e);
+        if (oldHandler)
+        {
+            oldHandler(e);
+        }
     }
-    @catch (NSException* ex) {}
-    if (oldHandler)
+    @catch (NSException* e)
     {
-        oldHandler(e);
+        abort();
     }
 }
 
