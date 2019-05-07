@@ -1,5 +1,5 @@
-#include <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
+#include "AppSupport/CPDistributedMessagingCenter.h"
+#import "rocketbootstrap/rocketbootstrap.h"
 #import "symbolication.h"
 
 #define isSB [[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"]

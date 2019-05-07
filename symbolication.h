@@ -1,8 +1,8 @@
-#import <MobileGestalt/MobileGestalt.h>
+#import "MobileGestalt/MobileGestalt.h"
 #include <mach-o/dyld.h>
 #include <dlfcn.h>
 #include <mach-o/loader.h>
-#include <libsymbolicate/CoreSymbolication.h>
+#include "libsymbolicate/CoreSymbolication.h"
 
 inline CSArchitecture getArch(const char* path)
 {

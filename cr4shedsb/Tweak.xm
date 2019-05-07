@@ -1,6 +1,6 @@
-#include <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
-#import <libbulletin/JBBulletinManager.h>
+#include "../AppSupport/CPDistributedMessagingCenter.h"
+#import "../rocketbootstrap/rocketbootstrap.h"
+#import "libbulletin/JBBulletinManager.h"
 
 @interface Cr4shedServer : NSObject
 @end
