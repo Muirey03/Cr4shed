@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "Refreshing uicache"
+uicache --all
+echo "Done :)"
+exit 0

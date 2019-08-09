@@ -100,7 +100,7 @@ inline NSString* deviceName()
 -(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
 @end
 
-void sendNotification(NSString* content)
+void sendNotification(NSString* content, NSDictionary* userInfo)
 {
     if (isSB)
     {
@@ -110,7 +110,7 @@ void sendNotification(NSString* content)
     {
         CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
         rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
-        [messagingCenter sendMessageName:@"sendNotification" userInfo:@{@"content" : content}];
+        [messagingCenter sendMessageName:@"sendNotification" userInfo:@{@"content" : content, @"userInfo" : userInfo}];
     }
 }
 
@@ -167,7 +167,8 @@ static void createCrashLog(NSException* e)
     writeStringToFile(errorMessage, path);
 
     //show notification:
-    sendNotification([NSString stringWithFormat:@"%@ crashed at %@", processName, [NSDate date]]);
+    NSDictionary* notifUserInfo = @{@"logPath" : path};
+    sendNotification([NSString stringWithFormat:@"%@ crashed at %@", processName, [NSDate date]], notifUserInfo);
 }
 
 /* add the exception handler: */

@@ -1,6 +1,6 @@
 #include "../AppSupport/CPDistributedMessagingCenter.h"
 #import "../rocketbootstrap/rocketbootstrap.h"
-#import "libbulletin/JBBulletinManager.h"
+#import "libnotifications.h"
 
 @interface Cr4shedServer : NSObject
 @end
@@ -54,7 +54,15 @@
     NSString* content = userInfo[@"content"];
 	NSString* bundleID = @"com.muirey03.cr4shedgui";
 	NSString* title = @"Cr4shed";
-	[[JBBulletinManager sharedInstance] showBulletinWithTitle:title message:content bundleID:bundleID];
+    NSDictionary* notifUserInfo = userInfo[@"userInfo"];
+    [CPNotification showAlertWithTitle:title
+                                message:content
+                                userInfo:notifUserInfo
+                                badgeCount:1
+                                soundName:nil
+                                delay:0.
+                                repeats:NO
+                                bundleId:bundleID];
     return nil;
 }
 @end

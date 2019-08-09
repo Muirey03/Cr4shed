@@ -150,5 +150,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>SBAppUsesLocalNotifications</key>
+	<true/>
 </dict>
 </plist>
