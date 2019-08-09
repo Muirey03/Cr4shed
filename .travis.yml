@@ -8,6 +8,7 @@ env:
 before_install:
 - brew install dpkg ldid
 - git clone --recursive git://github.com/theos/theos.git ~/theos
+- chmod 0775 ./layout/DEBIAN/postinst
 script:
 - make clean package FINALPACKAGE=1
 before_deploy:
