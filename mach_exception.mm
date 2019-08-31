@@ -397,8 +397,7 @@ void setMachExceptionHandler(mry_exception_handler_t excHandler)
 		exception_codes[0] = (uint64_t)*(uint32_t*)(msg.data + 0x28);
 		exception_codes[1] = *(uint64_t*)(msg.data + (0x78 + (8 * exception_codes[0])));
 
-		if (!exc_server(&msg.head, &reply.head))
-			RLog(@"failed to call exc server");
+		exc_server(&msg.head, &reply.head);
 
 		//send reply:
 		mr = mach_msg(&reply.head, MACH_SEND_MSG, reply.head.msgh_size, 0, MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);

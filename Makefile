@@ -4,7 +4,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = Cr4shed
 Cr4shed_FILES = $(wildcard *.m *.mm *.xm)
-Cr4shed_CFLAGS = -fobjc-arc
+Cr4shed_CFLAGS = -fobjc-arc -std=c++11
 Cr4shed_FRAMEWORKS = AppSupport CoreSymbolication
 Cr4shed_LIBRARIES = MobileGestalt rocketbootstrap
 Cr4shed_LDFLAGS += -FFrameworks/ -LLibraries/
