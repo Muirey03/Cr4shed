@@ -198,9 +198,9 @@ static std::vector<struct register_info> get_register_info(mach_port_t thread)
 		info_vec.push_back(info); \
 	} while (false)
 
-	ADD_INFO(__pc, "PC");
-	ADD_INFO(__lr, "LR");
-	ADD_INFO(__cpsr, "CPSR");
+	ADD_INFO(pc, "PC");
+	ADD_INFO(lr, "LR");
+	ADD_INFO(cpsr, "CPSR");
 
 	#define ARM64_REGISTER_COUNT 29
 	for (unsigned int i = 0; i < ARM64_REGISTER_COUNT; i++)
@@ -208,7 +208,7 @@ static std::vector<struct register_info> get_register_info(mach_port_t thread)
 		size_t reg_name_size = snprintf(NULL, 0, "x%d", i) + 1;
 		char* reg_name = (char*)malloc(reg_name_size);
 		snprintf(reg_name, reg_name_size, "x%d", i);
-		ADD_INFO(__x[i], reg_name);
+		ADD_INFO(x[i], reg_name);
 		free(reg_name);
 	}
 
@@ -243,12 +243,12 @@ void thread_call_stack(mach_port_t thread, NSArray** outStackSymbols, NSArray** 
 	mach_msg_type_number_t thread_stateCnt = ARM_THREAD_STATE64_COUNT;
 	thread_get_state(thread, ARM_THREAD_STATE64, (thread_state_t)&thread_state, &thread_stateCnt);
 
-	uint64_t pc_reg = thread_state.__pc;
+	uint64_t pc_reg = thread_state.pc;
 	[returnAddresses addObject:@(pc_reg)];
-	uint64_t link_reg = thread_state.__lr;
+	uint64_t link_reg = thread_state.lr;
 	if (link_reg != pc_reg)
 		[returnAddresses addObject:@(link_reg)];
-	uint64_t frame_addr = thread_state.__fp;
+	uint64_t frame_addr = thread_state.fp;
 	if (!is_valid_address(frame_addr))
 		return;
 	mach_stack_frame_entry frame = { 0 };
