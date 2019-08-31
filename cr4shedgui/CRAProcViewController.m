@@ -10,11 +10,11 @@
     {
         _proc = arg1;
         [_proc.logs sortUsingComparator:^NSComparisonResult(NSString* a, NSString* b) {
-            NSString* path1 = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", a];
+            NSString* path1 = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", a];
     		NSDictionary* fileAttribs1 = [[NSFileManager defaultManager] attributesOfItemAtPath:path1 error:nil];
     		NSDate* first = [fileAttribs1 objectForKey:NSFileCreationDate];
 
-            NSString* path2 = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", b];
+            NSString* path2 = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", b];
             NSDictionary* fileAttribs2 = [[NSFileManager defaultManager] attributesOfItemAtPath:path2 error:nil];
     		NSDate* second = [fileAttribs2 objectForKey:NSFileCreationDate];
     	    return [second compare:first];
@@ -85,12 +85,12 @@
         if (_proc.logs.count > 1)
         {
             //get new latestDate
-            NSString* newPath = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", _proc.logs[1]];
+            NSString* newPath = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", _proc.logs[1]];
             NSDictionary* fileAttribs = [[NSFileManager defaultManager] attributesOfItemAtPath:newPath error:nil];
             _proc.latestDate = [fileAttribs objectForKey:NSFileCreationDate];
         }
     }
-    NSString* path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", _proc.logs[indexPath.row]];
+    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", _proc.logs[indexPath.row]];
     [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
 	[_proc.logs removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];

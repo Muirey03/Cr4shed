@@ -1,6 +1,7 @@
 #include "../AppSupport/CPDistributedMessagingCenter.h"
 #import "../rocketbootstrap/rocketbootstrap.h"
 #import "libnotifications.h"
+#include <pthread.h>
 
 @interface Cr4shedServer : NSObject
 @end
@@ -78,13 +79,26 @@
 -(void)crash;
 @end
 
+void test(void) {}
+
 %hook SpringBoard
 -(void)applicationDidFinishLaunching:(id)arg1
 {
     %orig;
-    //@try {
-    [self crash];
-    //} @catch (NSException* e) {}
+    //abort();
+
+    /*id i;
+    i = @[i];*/
+    int* op = (int*)0x4141414141414141;
+    *op = 5;
+    /*dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        int i = 0x41;
+        int* p = &i;
+        void (*v)(void) = (void (*)(void))p;
+        v();
+    });*/
+    //memory leak:
+    //while (malloc(1024));
 }
 %end
 #endif

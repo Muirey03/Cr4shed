@@ -29,7 +29,7 @@
 
     webView = [WKWebView new];
     webView.scrollView.bounces = NO;
-    NSString* path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", _log];
+    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", _log];
     logMessage = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:NULL];
 
     NSString* htmlString =  @"<html><head><title>.</title><meta name='viewport' content='initial-scale=1.0,maximum-scale=3.0'/></head><body><pre style=\"font-size:8pt;\">%@</pre></body></html>";

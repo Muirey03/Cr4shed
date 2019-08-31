@@ -1,6 +1,11 @@
+@import Foundation;
+
 #include "AppSupport/CPDistributedMessagingCenter.h"
 #import "rocketbootstrap/rocketbootstrap.h"
+#import "MobileGestalt/MobileGestalt.h"
 #import "symbolication.h"
+#import "mach_exception.h"
+#import <mach-o/dyld.h>
 
 #define isSB [[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"]
 
@@ -64,9 +69,8 @@ static NSString* getImage(NSString* symbol)
     return [symbol substringWithRange:NSMakeRange(startingI, endingI-startingI)];
 }
 
-static NSString* determineCulprit(NSException* e)
+static NSString* determineCulprit(NSArray* symbols)
 {
-    NSArray* symbols = [e callStackSymbols];
     for (int i = 0; i < symbols.count; i++)
     {
         NSString* symbol = symbols[i];
@@ -114,68 +118,89 @@ void sendNotification(NSString* content, NSDictionary* userInfo)
     }
 }
 
-static void createCrashLog(NSException* e)
+static void createCrashLog(NSString* specialisedInfo)
 {
     // Format the contents of the new crash log:
-    NSString* stackSymbols = getCallStack(e);
+    NSDate* now = [NSDate date];
+    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateStyle:NSDateFormatterShortStyle];
+    [formatter setTimeStyle:NSDateFormatterShortStyle];
+    NSString* dateString = [formatter stringFromDate:now];
+
     NSString* processID = [NSBundle mainBundle].bundleIdentifier;
     NSString* processName = [[NSProcessInfo processInfo] processName];
-    NSString* culprit = determineCulprit(e);
     NSString* device = [NSString stringWithFormat:@"%@, iOS %@", deviceName(), deviceVersion()];
-
-    /* Remove false positives: */
-    if ([e.reason containsString:@"optimistic locking failure"])
-        return;
-    if ([e.reason containsString:@"This NSPersistentStoreCoordinator has no persistent stores"])
-        return;
 
     NSString* errorMessage = [NSString stringWithFormat:@"Date: %@\n"
                                                         @"Process: %@\n"
                                                         @"Bundle id: %@\n"
-                                                        @"Exception type: %@\n"
-                                                        @"Reason: %@\n"
-                                                        @"Culprit: %@\n"
-                                                        @"Device: %@\n"
-                                                        @"Call stack:\n%@",
-                                                        [NSDate date],
+                                                        @"Device: %@\n\n"
+                                                        @"%@\n\n"
+                                                        @"Loaded images:\n",
+                                                        dateString,
                                                         processName,
                                                         processID,
-                                                        e.name,
-                                                        e.reason,
-                                                        culprit,
                                                         device,
-                                                        stackSymbols];
+                                                        specialisedInfo];
+
+    uint32_t image_cnt = _dyld_image_count();
+    for (unsigned int i = 0; i < image_cnt; i++)
+    {
+        errorMessage = [errorMessage stringByAppendingFormat:@"%u: %s\n", i, _dyld_get_image_name(i)];
+    }
 
     // Create the dir if it doesn't exist already:
     BOOL isDir;
-    BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/tmp/crash_logs" isDirectory:&isDir];
+    BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/mobile/Library/Cr4shed" isDirectory:&isDir];
     if (!dirExists)
-        dirExists = createDir(@"/var/tmp/crash_logs");
+        dirExists = createDir(@"/var/mobile/Library/Cr4shed");
     if (!dirExists) return; //should never happen, but just in case
 
     // Get the date to use for the filename:
-    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+    formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"yyyy-MM-dd_HH:mm"];
-    NSString* dateStr = [formatter stringFromDate:[NSDate date]];
+    NSString* dateStr = [formatter stringFromDate:now];
 
     // Get the path for the new crash log:
-    NSString* path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@@%@.log", processName, dateStr];
+    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@.log", processName, dateStr];
     for (int i = 1; [[NSFileManager defaultManager] fileExistsAtPath:path]; i++)
-        path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@@%@ (%d).log", processName, dateStr, i];
+        path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@ (%d).log", processName, dateStr, i];
 
     // Create the crash log
     writeStringToFile(errorMessage, path);
 
     //show notification:
     NSDictionary* notifUserInfo = @{@"logPath" : path};
-    sendNotification([NSString stringWithFormat:@"%@ crashed at %@", processName, [NSDate date]], notifUserInfo);
+    sendNotification([NSString stringWithFormat:@"%@ crashed at %@", processName, dateString], notifUserInfo);
 }
 
 /* add the exception handler: */
 static NSUncaughtExceptionHandler* oldHandler;
 static BOOL hasCrashed = NO;
 
-__unused void unhandledExceptionHandler(NSException* e)
+void createNSExceptionLog(NSException* e)
+{
+    /* Remove false positives: */
+    if ([e.reason containsString:@"optimistic locking failure"])
+        return;
+    if ([e.reason containsString:@"This NSPersistentStoreCoordinator has no persistent stores"])
+        return;
+
+    NSString* culprit = determineCulprit(e.callStackSymbols);
+    NSString* stackSymbols = getCallStack(e);
+    NSString* info = [NSString stringWithFormat:@"Exception type: %@\n"
+                                                @"Reason: %@\n"
+                                                @"Culprit: %@\n"
+                                                @"Call stack:\n%@",
+                                                e.name,
+                                                e.reason,
+                                                culprit,
+                                                stackSymbols];
+
+    createCrashLog(info);
+}
+
+void unhandledExceptionHandler(NSException* e)
 {
     if (hasCrashed)
         abort();
@@ -183,7 +208,7 @@ __unused void unhandledExceptionHandler(NSException* e)
         hasCrashed = YES;
     @try
     {
-        createCrashLog(e);
+        createNSExceptionLog(e);
         if (oldHandler)
         {
             oldHandler(e);
@@ -193,6 +218,63 @@ __unused void unhandledExceptionHandler(NSException* e)
     {
         abort();
     }
+}
+
+void handleMachException(struct exception_info* info)
+{
+
+    if (hasCrashed)
+        return;
+
+    NSString* culprit = determineCulprit(info->stackSymbols);
+    NSArray* stackSymbolsArray = symbolicatedStackSymbols(info->stackSymbols, info->returnAddresses);
+    NSString* stackSymbols = [stackSymbolsArray componentsJoinedByString:@"\n"];
+    NSMutableString* infoStr = [NSMutableString stringWithFormat:   @"Exception type: %s\n"
+                                                                    @"Exception subtype: %s\n"
+                                                                    @"Exception codes: %s\n"
+                                                                    @"Culprit: %@\n",
+                                                                    info->exception_type,
+                                                                    info->exception_subtype,
+                                                                    info->exception_codes,
+                                                                    culprit];
+    if (info->vm_info)
+        [infoStr appendFormat:@"VM Protection: %s\n\n", info->vm_info];
+    [infoStr appendFormat:  @"Triggered by thread: %llu\n"
+                            @"Thread name: %s\n"
+                            @"Thread dispatch label: %s\n"
+                            @"Call stack:\n%@\n\n"
+                            @"Register values:\n",
+                            info->thread_id,
+                            info->thread_name,
+                            info->thread_label,
+                            stackSymbols];
+    
+    const unsigned int reg_columns = 3;
+    const unsigned int column_width = 22;
+    for (unsigned int i = 0; i < info->register_info.size(); i += reg_columns)
+    {
+        struct register_info reg_info = info->register_info[i];
+        NSString* rowStr = [NSString stringWithFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
+
+        if (i + 1 < info->register_info.size())
+        {
+            reg_info = info->register_info[i + 1];
+            rowStr = [rowStr stringByPaddingToLength:column_width withString:@" " startingAtIndex:0];
+            rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
+        }
+        if (i + 2 < info->register_info.size())
+        {
+            reg_info = info->register_info[i + 2];
+            rowStr = [rowStr stringByPaddingToLength:column_width * 2 withString:@" " startingAtIndex:0];
+            rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
+        }
+        if (i + 3 < info->register_info.size())
+            rowStr = [rowStr stringByAppendingFormat:@"\n"];
+
+        [infoStr appendString:rowStr];
+    }
+
+    createCrashLog([infoStr copy]);
 }
 
 %group Tweak
@@ -245,4 +327,6 @@ inline BOOL isBlacklisted(NSString* procName)
         %init(Tweak);
         NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
     }
+
+    setMachExceptionHandler(&handleMachException);
 }

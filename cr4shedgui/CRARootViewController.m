@@ -122,7 +122,7 @@
 {
 	_procs = [[NSMutableArray alloc] init];
 	//loop through all logs
-	NSMutableArray* files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/var/tmp/crash_logs" error:nil] mutableCopy];
+	NSMutableArray* files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/var/mobile/Library/Cr4shed" error:nil] mutableCopy];
 	for (int i = 0; i < files.count; i++)
 	{
 		NSString* file = files[i];
@@ -158,7 +158,7 @@
 		[proc.logs addObject:file];
 
 		//get date:
-		NSString* path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", file];
+		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", file];
 		NSDictionary* fileAttribs = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
 		NSDate* date = [fileAttribs objectForKey:NSFileCreationDate];
 		if (!inArray || [proc.latestDate compare:date] == NSOrderedAscending)
@@ -198,7 +198,7 @@
 	Process* proc = _procs[indexPath.row];
 	for (NSString* file in proc.logs)
 	{
-		NSString* path = [NSString stringWithFormat:@"/var/tmp/crash_logs/%@", file];
+		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", file];
 	    [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
 	}
 	[_procs removeObjectAtIndex:indexPath.row];
