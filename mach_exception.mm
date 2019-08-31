@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <substrate.h>
-#import "RemoteLog.h"
 
 mach_port_t exc_port;
 dispatch_queue_t exception_queue;
