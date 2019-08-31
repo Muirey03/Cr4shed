@@ -15,6 +15,17 @@ extern "C" {
 boolean_t exc_server(mach_msg_header_t *InHeadP, mach_msg_header_t *OutHeadP);
 }
 
+typedef struct
+{
+	__uint64_t    __x[29];	/* General purpose registers x0-x28 */
+	__uint64_t    __fp;		/* Frame pointer x29 */
+	__uint64_t    __lr;		/* Link register x30 */
+	__uint64_t    __sp;		/* Stack pointer x31 */
+	__uint64_t    __pc;		/* Program counter */
+	__uint32_t    __cpsr;	/* Current program status register */
+	__uint32_t    __pad;    /* Same size for 32-bit or 64-bit clients */
+} _CR4_THREAD_STATE64;
+
 static const char* mach_exception_string(exception_type_t exception)
 {
 	#define exc_case(type) case type: return #type
@@ -189,12 +200,12 @@ static std::vector<struct register_info> get_register_info(mach_port_t thread)
 	std::vector<struct register_info> info_vec;
 
 	//get thread state:
-	_STRUCT_ARM_THREAD_STATE64 thread_state = {{ 0 }};
+	_CR4_THREAD_STATE64 thread_state = {{ 0 }};
 	mach_msg_type_number_t thread_stateCnt = ARM_THREAD_STATE64_COUNT;
 	thread_get_state(thread, ARM_THREAD_STATE64, (thread_state_t)&thread_state, &thread_stateCnt);
 
 	#define ADD_INFO(reg, name) do { \
-		struct register_info info = { strdup(name), thread_state.reg }; \
+		struct register_info info = { strdup(name), thread_state.__##reg }; \
 		info_vec.push_back(info); \
 	} while (false)
 
@@ -239,16 +250,16 @@ void thread_call_stack(mach_port_t thread, NSArray** outStackSymbols, NSArray** 
 	NSMutableArray* returnAddresses = [NSMutableArray new];
 
 	//get thread state:
-	_STRUCT_ARM_THREAD_STATE64 thread_state = {{ 0 }};
+	_CR4_THREAD_STATE64 thread_state = {{ 0 }};
 	mach_msg_type_number_t thread_stateCnt = ARM_THREAD_STATE64_COUNT;
 	thread_get_state(thread, ARM_THREAD_STATE64, (thread_state_t)&thread_state, &thread_stateCnt);
 
-	uint64_t pc_reg = thread_state.pc;
+	uint64_t pc_reg = thread_state.__pc;
 	[returnAddresses addObject:@(pc_reg)];
-	uint64_t link_reg = thread_state.lr;
+	uint64_t link_reg = thread_state.__lr;
 	if (link_reg != pc_reg)
 		[returnAddresses addObject:@(link_reg)];
-	uint64_t frame_addr = thread_state.fp;
+	uint64_t frame_addr = thread_state.__fp;
 	if (!is_valid_address(frame_addr))
 		return;
 	mach_stack_frame_entry frame = { 0 };
