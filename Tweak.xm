@@ -118,6 +118,45 @@ void sendNotification(NSString* content, NSDictionary* userInfo)
     }
 }
 
+static unsigned long getImageVersion(uint32_t img)
+{
+    const struct mach_header* header = _dyld_get_image_header(img);
+    BOOL is64bit = header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64;
+    uintptr_t cursor = (uintptr_t)header + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
+    const struct segment_command* segmentCommand = NULL;
+    for (uint32_t i = 0; i < header->ncmds; i++, cursor += segmentCommand->cmdsize)
+    {
+        segmentCommand = (struct segment_command *)cursor;
+        if (segmentCommand->cmd == LC_ID_DYLIB)
+        {
+            const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
+            return dylibCommand->dylib.current_version;
+        }
+    }
+    return 0;
+}
+
+static NSDate* getImageTime(uint32_t img)
+{
+    const struct mach_header* header = _dyld_get_image_header(img);
+    BOOL is64bit = header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64;
+    uintptr_t cursor = (uintptr_t)header + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
+    const struct segment_command* segmentCommand = NULL;
+    for (uint32_t i = 0; i < header->ncmds; i++, cursor += segmentCommand->cmdsize)
+    {
+        segmentCommand = (struct segment_command *)cursor;
+        if (segmentCommand->cmd == LC_ID_DYLIB)
+        {
+            const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
+            unsigned long timestamp = dylibCommand->dylib.timestamp;
+            RLog(@"timestamp: %llu", timestamp);
+            return [NSDate dateWithTimeIntervalSince1970:timestamp];
+        }
+    }
+    return 0;
+}
+
+
 static void createCrashLog(NSString* specialisedInfo)
 {
     // Format the contents of the new crash log:
@@ -146,7 +185,11 @@ static void createCrashLog(NSString* specialisedInfo)
     uint32_t image_cnt = _dyld_image_count();
     for (unsigned int i = 0; i < image_cnt; i++)
     {
-        errorMessage = [errorMessage stringByAppendingFormat:@"%u: %s\n", i, _dyld_get_image_name(i)];
+        NSDate* imgTime = getImageTime(i);
+        formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateStyle:NSDateFormatterShortStyle];
+        [formatter setTimeStyle:NSDateFormatterNoStyle];
+        errorMessage = [errorMessage stringByAppendingFormat:@"%u: %s (%lu, Build date: %@)\n", i, _dyld_get_image_name(i), getImageVersion(i), [formatter stringFromDate:imgTime]];
     }
 
     // Create the dir if it doesn't exist already:
@@ -292,7 +335,6 @@ void handleMachException(struct exception_info* info)
 inline BOOL isBlacklisted(NSString* procName)
 {
     NSArray<NSString*>* blacklisted = @[
-        @"ReportCrash",
         @"ProtectedCloudKeySyncing",
         @"gssc",
         @"awdd",
@@ -310,7 +352,8 @@ inline BOOL isBlacklisted(NSString* procName)
         @"mobilewatchdog",
         @"misd",
         @"dasd",
-        @"passd"
+        @"passd",
+        @"CircleJoinRequested"
     ];
     for (NSString* bannedProc in blacklisted)
     {
@@ -320,13 +363,62 @@ inline BOOL isBlacklisted(NSString* procName)
     return NO;
 }
 
+#define UIApplicationDidFinishLaunchingNotification @"UIApplicationDidFinishLaunchingNotification"
+
+BOOL isApplication(void)
+{
+    //is UIKit loaded:
+    if (!objc_getClass("UIApplication"))
+        return NO;
+    
+    //does executable link against UIKit:
+    BOOL uikitLink = NO;
+    const struct mach_header* header = _dyld_get_image_header(0);
+    BOOL is64bit = header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64;
+    uintptr_t cursor = (uintptr_t)header + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
+    const struct segment_command* segmentCommand = NULL;
+    for (uint32_t i = 0; i < header->ncmds; i++, cursor += segmentCommand->cmdsize)
+    {
+        segmentCommand = (struct segment_command *)cursor;
+        switch (segmentCommand->cmd)
+        {
+            case LC_LOAD_DYLIB:
+            case LC_LOAD_WEAK_DYLIB:
+            case LC_REEXPORT_DYLIB:
+                const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
+                uint32_t offset = dylibCommand->dylib.name.offset;
+                char* lib_name = ((char*)dylibCommand + offset);
+                if (strcmp(lib_name, "/System/Library/Frameworks/UIKit.framework/UIKit") == 0)
+                    uikitLink = YES;
+                break;
+        }
+        if (uikitLink)
+            break;
+    }
+    if (!uikitLink)
+        return NO;
+    
+    //is executable path in an app dir?
+    const char* exec_path = _dyld_get_image_name(0);
+    #define STARTS_WITH(haystack, needle) (strstr(haystack, needle) == haystack)
+    return STARTS_WITH(exec_path, "/Applications/") || STARTS_WITH(exec_path, "/var/containers/Bundle/Application/") || STARTS_WITH(exec_path, "/private/var/containers/Bundle/Application/") || (strcmp(exec_path, "/System/Library/CoreServices/SpringBoard.app/SpringBoard") == 0);
+    #undef STARTS_WITH
+}
+
 %ctor
 {
     if (!isBlacklisted([[NSProcessInfo processInfo] processName]))
     {
         %init(Tweak);
         NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
-    }
 
-    setMachExceptionHandler(&handleMachException);
+        if (isApplication())
+        {
+            [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:nil usingBlock:^(NSNotification* note){
+                setMachExceptionHandler(&handleMachException);
+            }];
+        }
+        else
+            setMachExceptionHandler(&handleMachException);
+    }
 }

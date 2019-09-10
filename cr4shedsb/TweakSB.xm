@@ -85,20 +85,19 @@ void test(void) {}
 -(void)applicationDidFinishLaunching:(id)arg1
 {
     %orig;
-    //abort();
 
-    /*id i;
-    i = @[i];*/
-    int* op = (int*)0x4141414141414141;
-    *op = 5;
-    /*dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        int i = 0x41;
-        int* p = &i;
-        void (*v)(void) = (void (*)(void))p;
-        v();
-    });*/
-    //memory leak:
-    //while (malloc(1024));
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        /*id i;
+        i = @[i];*/
+        int* op = (int*)0x4141414141414141;
+        *op = 5;
+        /*dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            int i = 0x41;
+            int* p = &i;
+            void (*v)(void) = (void (*)(void))p;
+            v();
+        });*/
+    });
 }
 %end
 #endif

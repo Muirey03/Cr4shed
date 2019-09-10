@@ -9,7 +9,6 @@
 mach_port_t exc_port;
 dispatch_queue_t exception_queue;
 mry_exception_handler_t exception_handler;
-mach_exception_data_type_t exception_codes[2];
 
 extern "C" {
 boolean_t exc_server(mach_msg_header_t *InHeadP, mach_msg_header_t *OutHeadP);
@@ -327,6 +326,8 @@ extern "C" kern_return_t catch_exception_raise_state_identity(
 	mach_msg_type_number_t *new_stateCnt
 )
 {
+	_STRUCT_ARM_EXCEPTION_STATE64 exception_state = *(_STRUCT_ARM_EXCEPTION_STATE64*)old_state;
+	mach_exception_data_type_t exception_codes[2] = { (mach_exception_data_type_t)(code[0]), (mach_exception_data_type_t)exception_state.__far };
 	if (exception_port == exc_port && exception_handler)
 	{
 		struct exception_info info;
@@ -372,6 +373,14 @@ void setMachExceptionHandler(mry_exception_handler_t excHandler)
 	dispatch_async(exception_queue, ^{
 		kern_return_t kr;
 
+		//old exception ports:
+		exception_mask_t old_masks[16];
+		mach_msg_type_number_t old_masksCnt = 0;
+		exception_handler_t old_handlers[16];
+		exception_behavior_t old_behaviors[16];
+		thread_state_flavor_t old_flavors[16];
+		memset(old_handlers, 0, sizeof(exception_handler_t) * 16);
+
 		//create exception port:
 		exc_port = MACH_PORT_NULL;
 		kr = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE, &exc_port);
@@ -382,17 +391,16 @@ void setMachExceptionHandler(mry_exception_handler_t excHandler)
 			goto failure;
 
 		//set new exception port:
-		kr = task_set_exception_ports(mach_task_self(), EXC_MASK_ALL | EXC_MASK_CRASH, exc_port, EXCEPTION_STATE_IDENTITY, MACHINE_THREAD_STATE);
+		kr = task_swap_exception_ports(mach_task_self(), EXC_MASK_ALL, exc_port, EXCEPTION_STATE_IDENTITY, ARM_EXCEPTION_STATE64, old_masks, &old_masksCnt, old_handlers, old_behaviors, old_flavors);
 		if (kr != KERN_SUCCESS)
 			goto failure;
-		
-		//wait for exception:
+
 		mach_msg_return_t mr;
 		struct {
 			mach_msg_header_t head;
 			char data[256];
 		} reply;
-		struct {
+		struct msg_struct {
 			mach_msg_header_t head;
 			mach_msg_body_t msgh_body;
 			uint8_t data[1024];
@@ -400,22 +408,28 @@ void setMachExceptionHandler(mry_exception_handler_t excHandler)
 
 		//wait for exception message:
 		mr = mach_msg(&msg.head, MACH_RCV_MSG|MACH_RCV_LARGE, 0, sizeof(msg), exc_port, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
-		if (mr != MACH_MSG_SUCCESS)
-			goto failure;
+		//cache the message in case exc_server fucks with it
+		struct msg_struct old_msg = msg;
 
 		//handle exception:
-		//manual parse as mach_exc_server wasn't working and exc_server is only 32-bit 
-		exception_codes[0] = (uint64_t)*(uint32_t*)(msg.data + 0x28);
-		exception_codes[1] = *(uint64_t*)(msg.data + (0x78 + (8 * exception_codes[0])));
+		if (!exc_server(&msg.head, &reply.head))
+		{
+			memcpy(&reply, &msg, sizeof(reply));
+		}
 
-		exc_server(&msg.head, &reply.head);
+		//message old ports:
+		old_msg.head.msgh_local_port = MACH_PORT_NULL;
+		for (unsigned int i = 0; i < old_masksCnt; i++)
+		{
+			msg.head.msgh_remote_port = old_handlers[i];
+			mach_msg(&old_msg.head, MACH_SEND_MSG, old_msg.head.msgh_size, 0, MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+		}
 
 		//send reply:
 		mr = mach_msg(&reply.head, MACH_SEND_MSG, reply.head.msgh_size, 0, MACH_PORT_NULL, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 		if (mr != MACH_MSG_SUCCESS)
 			goto failure;
 
-		return;
 	failure:
 		if (exc_port != MACH_PORT_NULL)
 			mach_port_deallocate(mach_task_self(), exc_port);
