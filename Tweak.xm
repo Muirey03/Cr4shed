@@ -149,7 +149,6 @@ static NSDate* getImageTime(uint32_t img)
         {
             const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
             unsigned long timestamp = dylibCommand->dylib.timestamp;
-            RLog(@"timestamp: %llu", timestamp);
             return [NSDate dateWithTimeIntervalSince1970:timestamp];
         }
     }

@@ -372,6 +372,18 @@ void setMachExceptionHandler(mry_exception_handler_t excHandler)
 	exception_queue = dispatch_queue_create("com.muirey03.cr4shed-exception_queue", NULL);
 	dispatch_async(exception_queue, ^{
 		kern_return_t kr;
+		mach_msg_return_t mr;
+
+		struct {
+			mach_msg_header_t head;
+			char data[256];
+		} reply;
+		struct msg_struct {
+			mach_msg_header_t head;
+			mach_msg_body_t msgh_body;
+			uint8_t data[1024];
+		} msg;
+		struct msg_struct old_msg;
 
 		//old exception ports:
 		exception_mask_t old_masks[16];
@@ -395,21 +407,10 @@ void setMachExceptionHandler(mry_exception_handler_t excHandler)
 		if (kr != KERN_SUCCESS)
 			goto failure;
 
-		mach_msg_return_t mr;
-		struct {
-			mach_msg_header_t head;
-			char data[256];
-		} reply;
-		struct msg_struct {
-			mach_msg_header_t head;
-			mach_msg_body_t msgh_body;
-			uint8_t data[1024];
-		} msg;
-
 		//wait for exception message:
 		mr = mach_msg(&msg.head, MACH_RCV_MSG|MACH_RCV_LARGE, 0, sizeof(msg), exc_port, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 		//cache the message in case exc_server fucks with it
-		struct msg_struct old_msg = msg;
+		old_msg = msg;
 
 		//handle exception:
 		if (!exc_server(&msg.head, &reply.head))
