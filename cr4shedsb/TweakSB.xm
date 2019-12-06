@@ -1,6 +1,6 @@
 #include "../AppSupport/CPDistributedMessagingCenter.h"
 #import "../rocketbootstrap/rocketbootstrap.h"
-#import "libnotifications.h"
+#import "../libnotifications.h"
 #include <pthread.h>
 
 @interface Cr4shedServer : NSObject
@@ -39,14 +39,28 @@
 {
     NSString* str = userInfo[@"string"];
     NSString* path = userInfo[@"path"];
-    [str writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:nil];
+    NSFileManager* manager = [NSFileManager defaultManager];
+	if ([manager fileExistsAtPath:path])
+		[manager removeItemAtPath:path error:NULL];
+	NSDictionary<NSFileAttributeKey, id>* attributes = @{
+		NSFilePosixPermissions : @0666,
+        NSFileOwnerAccountName : @"mobile",
+        NSFileGroupOwnerAccountName : @"mobile"
+	};
+	NSData* contentsData = [str dataUsingEncoding:NSUTF8StringEncoding];
+	[manager createFileAtPath:path contents:contentsData attributes:attributes];
     return nil;
 }
 
 -(NSDictionary*)createDir:(NSString*)name withUserInfo:(NSDictionary*)userInfo
 {
     NSString* path = userInfo[@"path"];
-    BOOL success = [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:nil error:nil];
+    NSDictionary<NSFileAttributeKey, id>* attributes = @{
+		NSFilePosixPermissions : @0755,
+        NSFileOwnerAccountName : @"mobile",
+        NSFileGroupOwnerAccountName : @"mobile"
+	};
+    BOOL success = [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:attributes error:nil];
     return @{@"success" : @(success)};
 }
 
@@ -88,15 +102,23 @@ void test(void) {}
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         /*id i;
-        i = @[i];*/
+        i = @[i];
         int* op = (int*)0x4141414141414141;
-        *op = 5;
-        /*dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            int i = 0x41;
-            int* p = &i;
+        *op = 5;*/
+        
+        dispatch_queue_t queue = dispatch_queue_create("MY QUEUE", 0);
+        dispatch_async(queue, ^{
+            //abort();
+            /*int* op = (int*)0x4141414141414141;
+            *op = 5;*/
+            /*int* p = (int*)0x41;
             void (*v)(void) = (void (*)(void))p;
             v();
-        });*/
+            id i;
+            i = @[i];*/
+            /*int* fP = (int*)test;
+            *fP = 50;*/
+        });
     });
 }
 %end

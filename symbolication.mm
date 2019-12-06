@@ -24,6 +24,10 @@ inline CSArchitecture getArch(const char* path)
         arch.cpu_type = header->cputype;
         arch.cpu_subtype = header->cpusubtype;
     }
+    else
+    {
+        arch = CSArchitectureGetCurrent();
+    }
     return arch;
 }
 
@@ -70,40 +74,80 @@ static CFUUIDRef CFUUIDCreateFromUnformattedCString(const char* uuidStr) {
             CFRelease(stringRef);
         }
     }
-
     return uuid;
 }
 
-static CSSymbolicatorRef symbolicator(const char* path)
+static CSSymbolicatorRef symbolicator(const char* path, CSArchitecture* archp = NULL)
 {
-    CSSymbolicatorRef symb;
-    CSArchitecture arch = getArch(path);
+    CSArchitecture arch = archp ? *archp : getArch(path);
+
     if (arch.cpu_type != 0)
     {
-        symb = CSSymbolicatorCreateWithPathAndArchitecture(path, arch);
+        CSSymbolicatorRef symb = CSSymbolicatorCreateWithPathAndArchitecture(path, arch);
         if (!CSIsNull(symb))
         {
             return symb;
         }
     }
-    return symb;
+    return kCSNull;
 }
 
 static CSSymbolOwnerRef ownerForPath(const char* path)
 {
     NSString* uuidStr = executableUUID(path);
-    CSSymbolOwnerRef owner;
     CSSymbolicatorRef sym = symbolicator(path);
     if (!CSIsNull(sym))
     {
         CFUUIDRef uuid = CFUUIDCreateFromUnformattedCString([uuidStr UTF8String]);
         if (uuid)
         {
-            owner = CSSymbolicatorGetSymbolOwnerWithUUIDAtTime(sym, uuid, kCSNow);
+            CSSymbolOwnerRef owner = CSSymbolicatorGetSymbolOwnerWithUUIDAtTime(sym, uuid, kCSNow);
             CFRelease(uuid);
+            if (!CSIsNull(owner))
+                return owner;
         }
     }
-    return owner;
+    return kCSNull;
+}
+
+static CSSymbolOwnerRef ownerForPathAndUUID(const char* path, NSString* uuidStr, CSArchitecture arch)
+{
+    if (arch.cpu_type == 0)
+        arch = CSArchitectureGetCurrent();
+    CSSymbolicatorRef sym = symbolicator(path, &arch);
+    if (!CSIsNull(sym))
+    {
+        CFUUIDRef uuid = CFUUIDCreateFromUnformattedCString([uuidStr UTF8String]);
+        if (uuid)
+        {
+            CSSymbolOwnerRef owner = CSSymbolicatorGetSymbolOwnerWithUUIDAtTime(sym, uuid, kCSNow);
+            CFRelease(uuid);
+            if (!CSIsNull(owner))
+                return owner;
+        }
+    }
+    return kCSNull;
+}
+
+NSString* nameForSymbolOffsetInImage(uint64_t addr, const char* path, NSString* uuidStr, uint64_t imgAddr, CSArchitecture arch)
+{
+    if (uuidStr.length == 36 && strlen(path) && addr && imgAddr)
+    {
+        CSSymbolOwnerRef owner = ownerForPathAndUUID(path, uuidStr, arch);
+        if (!CSIsNull(owner))
+        {
+            uint64_t base = CSSymbolOwnerGetBaseAddress(owner);
+            uint64_t symOffset = addr + base - imgAddr;
+            CSSymbolRef symbol = CSSymbolOwnerGetSymbolWithAddress(owner, symOffset);
+            if (!CSIsNull(symbol))
+            {
+                const char* c_name = CSSymbolGetName(symbol);
+                if (c_name)
+                    return [NSString stringWithUTF8String:c_name];
+            }
+        }
+    }
+    return nil;
 }
 
 NSString* nameForSymbol(NSNumber* addrNum)

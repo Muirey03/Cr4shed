@@ -2,10 +2,10 @@
 
 #include "AppSupport/CPDistributedMessagingCenter.h"
 #import "rocketbootstrap/rocketbootstrap.h"
-#import "MobileGestalt/MobileGestalt.h"
 #import "symbolication.h"
-#import "mach_exception.h"
+#import "sharedutils.h"
 #import <mach-o/dyld.h>
+#import <mach/mach.h>
 
 #define isSB [[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"]
 
@@ -42,63 +42,6 @@ static NSString* getCallStack(NSException* e)
     return symbolStr;
 }
 
-static NSString* getImage(NSString* symbol)
-{
-    int startingI = -1;
-    int endingI = -1;
-    for (int i = 0; i < symbol.length - 1; i++)
-    {
-        char c = [symbol characterAtIndex:i];
-        char nextC = [symbol characterAtIndex:i+1];
-        if (startingI == -1)
-        {
-            if (c == ' ' && nextC != ' ')
-            {
-                startingI = i+1;
-            }
-        }
-        else
-        {
-            if (nextC == ' ')
-            {
-                endingI = i+1;
-                break;
-            }
-        }
-    }
-    return [symbol substringWithRange:NSMakeRange(startingI, endingI-startingI)];
-}
-
-static NSString* determineCulprit(NSArray* symbols)
-{
-    for (int i = 0; i < symbols.count; i++)
-    {
-        NSString* symbol = symbols[i];
-        NSString* image = getImage(symbol);
-        if (![image isEqualToString:@"Cr4shed.dylib"])
-        {
-            if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image]])
-                return image;
-        }
-    }
-    return @"Unknown";
-}
-
-inline NSString* deviceVersion()
-{
-    NSString* systemVersion = (__bridge NSString*)MGCopyAnswer(CFSTR("ProductVersion"));
-    if (systemVersion != nil)
-    {
-        return systemVersion;
-    }
-    return @"Unknown";
-}
-
-inline NSString* deviceName()
-{
-    return (__bridge NSString*)MGCopyAnswer(CFSTR("marketing-name"));
-}
-
 @interface Cr4shedServer : NSObject
 + (id)sharedInstance;
 -(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
@@ -120,50 +63,35 @@ void sendNotification(NSString* content, NSDictionary* userInfo)
 
 static unsigned long getImageVersion(uint32_t img)
 {
-    const struct mach_header* header = _dyld_get_image_header(img);
-    BOOL is64bit = header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64;
-    uintptr_t cursor = (uintptr_t)header + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
-    const struct segment_command* segmentCommand = NULL;
-    for (uint32_t i = 0; i < header->ncmds; i++, cursor += segmentCommand->cmdsize)
+    if (img < _dyld_image_count())
     {
-        segmentCommand = (struct segment_command *)cursor;
-        if (segmentCommand->cmd == LC_ID_DYLIB)
+        const struct mach_header* header = _dyld_get_image_header(img);
+        if (header)
         {
-            const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
-            return dylibCommand->dylib.current_version;
+            BOOL is64bit = header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64;
+            uintptr_t cursor = (uintptr_t)header + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
+            const struct segment_command* segmentCommand = NULL;
+            for (uint32_t i = 0; i < header->ncmds; i++, cursor += segmentCommand->cmdsize)
+            {
+                segmentCommand = (struct segment_command *)cursor;
+                if (segmentCommand->cmd == LC_ID_DYLIB)
+                {
+                    const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
+                    return dylibCommand->dylib.current_version;
+                }
+            }
         }
     }
     return 0;
 }
-
-static NSDate* getImageTime(uint32_t img)
-{
-    const struct mach_header* header = _dyld_get_image_header(img);
-    BOOL is64bit = header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64;
-    uintptr_t cursor = (uintptr_t)header + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
-    const struct segment_command* segmentCommand = NULL;
-    for (uint32_t i = 0; i < header->ncmds; i++, cursor += segmentCommand->cmdsize)
-    {
-        segmentCommand = (struct segment_command *)cursor;
-        if (segmentCommand->cmd == LC_ID_DYLIB)
-        {
-            const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
-            unsigned long timestamp = dylibCommand->dylib.timestamp;
-            return [NSDate dateWithTimeIntervalSince1970:timestamp];
-        }
-    }
-    return 0;
-}
-
 
 static void createCrashLog(NSString* specialisedInfo)
 {
+    markProcessAsHandled(mach_task_self());
+
     // Format the contents of the new crash log:
     NSDate* now = [NSDate date];
-    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
-    [formatter setDateStyle:NSDateFormatterShortStyle];
-    [formatter setTimeStyle:NSDateFormatterShortStyle];
-    NSString* dateString = [formatter stringFromDate:now];
+    NSString* dateString = stringFromDate(now, CR4DateFormatPretty);
 
     NSString* processID = [NSBundle mainBundle].bundleIdentifier;
     NSString* processName = [[NSProcessInfo processInfo] processName];
@@ -184,11 +112,7 @@ static void createCrashLog(NSString* specialisedInfo)
     uint32_t image_cnt = _dyld_image_count();
     for (unsigned int i = 0; i < image_cnt; i++)
     {
-        NSDate* imgTime = getImageTime(i);
-        formatter = [[NSDateFormatter alloc] init];
-        [formatter setDateStyle:NSDateFormatterShortStyle];
-        [formatter setTimeStyle:NSDateFormatterNoStyle];
-        errorMessage = [errorMessage stringByAppendingFormat:@"%u: %s (%lu, Build date: %@)\n", i, _dyld_get_image_name(i), getImageVersion(i), [formatter stringFromDate:imgTime]];
+        errorMessage = [errorMessage stringByAppendingFormat:@"%u: %s (Version: %lu)\n", i, _dyld_get_image_name(i), getImageVersion(i)];
     }
 
     // Create the dir if it doesn't exist already:
@@ -199,14 +123,12 @@ static void createCrashLog(NSString* specialisedInfo)
     if (!dirExists) return; //should never happen, but just in case
 
     // Get the date to use for the filename:
-    formatter = [[NSDateFormatter alloc] init];
-    [formatter setDateFormat:@"yyyy-MM-dd_HH:mm"];
-    NSString* dateStr = [formatter stringFromDate:now];
+    NSString* filenameDateStr = stringFromDate(now, CR4DateFormatFilename);
 
     // Get the path for the new crash log:
-    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@.log", processName, dateStr];
-    for (int i = 1; [[NSFileManager defaultManager] fileExistsAtPath:path]; i++)
-        path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@ (%d).log", processName, dateStr, i];
+    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@.log", processName, filenameDateStr];
+    for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:path]; i++)
+        path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@ (%d).log", processName, filenameDateStr, i];
 
     // Create the crash log
     writeStringToFile(errorMessage, path);
@@ -232,7 +154,7 @@ void createNSExceptionLog(NSException* e)
     NSString* stackSymbols = getCallStack(e);
     NSString* info = [NSString stringWithFormat:@"Exception type: %@\n"
                                                 @"Reason: %@\n"
-                                                @"Culprit: %@\n"
+                                                @"Culprit: %@\n\n"
                                                 @"Call stack:\n%@",
                                                 e.name,
                                                 e.reason,
@@ -260,63 +182,6 @@ void unhandledExceptionHandler(NSException* e)
     {
         abort();
     }
-}
-
-void handleMachException(struct exception_info* info)
-{
-
-    if (hasCrashed)
-        return;
-
-    NSString* culprit = determineCulprit(info->stackSymbols);
-    NSArray* stackSymbolsArray = symbolicatedStackSymbols(info->stackSymbols, info->returnAddresses);
-    NSString* stackSymbols = [stackSymbolsArray componentsJoinedByString:@"\n"];
-    NSMutableString* infoStr = [NSMutableString stringWithFormat:   @"Exception type: %s\n"
-                                                                    @"Exception subtype: %s\n"
-                                                                    @"Exception codes: %s\n"
-                                                                    @"Culprit: %@\n",
-                                                                    info->exception_type,
-                                                                    info->exception_subtype,
-                                                                    info->exception_codes,
-                                                                    culprit];
-    if (info->vm_info)
-        [infoStr appendFormat:@"VM Protection: %s\n\n", info->vm_info];
-    [infoStr appendFormat:  @"Triggered by thread: %llu\n"
-                            @"Thread name: %s\n"
-                            @"Thread dispatch label: %s\n"
-                            @"Call stack:\n%@\n\n"
-                            @"Register values:\n",
-                            info->thread_id,
-                            info->thread_name,
-                            info->thread_label,
-                            stackSymbols];
-    
-    const unsigned int reg_columns = 3;
-    const unsigned int column_width = 22;
-    for (unsigned int i = 0; i < info->register_info.size(); i += reg_columns)
-    {
-        struct register_info reg_info = info->register_info[i];
-        NSString* rowStr = [NSString stringWithFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
-
-        if (i + 1 < info->register_info.size())
-        {
-            reg_info = info->register_info[i + 1];
-            rowStr = [rowStr stringByPaddingToLength:column_width withString:@" " startingAtIndex:0];
-            rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
-        }
-        if (i + 2 < info->register_info.size())
-        {
-            reg_info = info->register_info[i + 2];
-            rowStr = [rowStr stringByPaddingToLength:column_width * 2 withString:@" " startingAtIndex:0];
-            rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
-        }
-        if (i + 3 < info->register_info.size())
-            rowStr = [rowStr stringByAppendingFormat:@"\n"];
-
-        [infoStr appendString:rowStr];
-    }
-
-    createCrashLog([infoStr copy]);
 }
 
 %group Tweak
@@ -362,62 +227,14 @@ inline BOOL isBlacklisted(NSString* procName)
     return NO;
 }
 
-#define UIApplicationDidFinishLaunchingNotification @"UIApplicationDidFinishLaunchingNotification"
-
-BOOL isApplication(void)
-{
-    //is UIKit loaded:
-    if (!objc_getClass("UIApplication"))
-        return NO;
-    
-    //does executable link against UIKit:
-    BOOL uikitLink = NO;
-    const struct mach_header* header = _dyld_get_image_header(0);
-    BOOL is64bit = header->magic == MH_MAGIC_64 || header->magic == MH_CIGAM_64;
-    uintptr_t cursor = (uintptr_t)header + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
-    const struct segment_command* segmentCommand = NULL;
-    for (uint32_t i = 0; i < header->ncmds; i++, cursor += segmentCommand->cmdsize)
-    {
-        segmentCommand = (struct segment_command *)cursor;
-        switch (segmentCommand->cmd)
-        {
-            case LC_LOAD_DYLIB:
-            case LC_LOAD_WEAK_DYLIB:
-            case LC_REEXPORT_DYLIB:
-                const struct dylib_command* dylibCommand = (const struct dylib_command*)segmentCommand;
-                uint32_t offset = dylibCommand->dylib.name.offset;
-                char* lib_name = ((char*)dylibCommand + offset);
-                if (strcmp(lib_name, "/System/Library/Frameworks/UIKit.framework/UIKit") == 0)
-                    uikitLink = YES;
-                break;
-        }
-        if (uikitLink)
-            break;
-    }
-    if (!uikitLink)
-        return NO;
-    
-    //is executable path in an app dir?
-    const char* exec_path = _dyld_get_image_name(0);
-    #define STARTS_WITH(haystack, needle) (strstr(haystack, needle) == haystack)
-    return STARTS_WITH(exec_path, "/Applications/") || STARTS_WITH(exec_path, "/var/containers/Bundle/Application/") || STARTS_WITH(exec_path, "/private/var/containers/Bundle/Application/") || (strcmp(exec_path, "/System/Library/CoreServices/SpringBoard.app/SpringBoard") == 0);
-    #undef STARTS_WITH
-}
-
 %ctor
 {
+    if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"])
+        dlopen("/Library/MobileSubstrate/DynamicLibraries/__Cr4shedSB.dylib", RTLD_NOW);
+
     if (!isBlacklisted([[NSProcessInfo processInfo] processName]))
     {
         %init(Tweak);
         NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
-
-        if (isApplication())
-        {
-            [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:nil usingBlock:^(NSNotification* note){
-                setMachExceptionHandler(&handleMachException);
-            }];
-        }
-        else
-            setMachExceptionHandler(&handleMachException);
     }
 }

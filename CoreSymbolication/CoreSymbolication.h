@@ -36,6 +36,7 @@ typedef struct _CSArchitecture {
 } CSArchitecture;
 
 #define kCSNow  0x80000000u
+#define kCSNull	((CSTypeRef) {NULL, NULL})
 
 extern "C" {
     // Allocation-related functions.
@@ -49,6 +50,9 @@ extern "C" {
     // CSSymbolicator
     CSSymbolicatorRef CSSymbolicatorCreateWithPathAndArchitecture(const char *path, CSArchitecture arch);
     CSSymbolOwnerRef CSSymbolicatorGetSymbolOwnerWithUUIDAtTime(CSSymbolicatorRef symbolicator, CFUUIDRef uuid, uint64_t time);
+
+    CSArchitecture CSArchitectureGetArchitectureForName(const char* arch);
+    CSArchitecture CSArchitectureGetCurrent();
 
     // CSSymbolOwner
     long CSSymbolOwnerForeachSymbol(CSSymbolOwnerRef owner, CSSymbolIterator block);

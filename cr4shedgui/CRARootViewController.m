@@ -1,7 +1,6 @@
 #import "CRARootViewController.h"
 #import "CRAProcViewController.h"
 #import "Process.h"
-#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
 
 @implementation Process
 -(id)init
@@ -63,11 +62,10 @@
 	//pull to refresh:
 	UIRefreshControl* refreshControl = [[UIRefreshControl alloc]init];
     [refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
-	if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"10.0")) {
+	if ([self.tableView respondsToSelector:@selector(setRefreshControl:)])
         self.tableView.refreshControl = refreshControl;
-    } else {
+	else
         [self.tableView addSubview:refreshControl];
-    }
 }
 
 -(void)refreshTable:(UIRefreshControl*)control
@@ -199,7 +197,7 @@
 	for (NSString* file in proc.logs)
 	{
 		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", file];
-	    [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+		[[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
 	}
 	[_procs removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];

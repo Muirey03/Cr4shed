@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "Refreshing uicache"
-uicache --all
-echo "Done :)"
+echo "Killing ReportCrash..."
+killall ReportCrash
+echo "Done!"
 exit 0
