@@ -280,8 +280,11 @@
 			free((void*)info->exception_codes);
 		if (info->vm_info)
 			free((void*)info->vm_info);
-		for (struct register_info reg_info : info->register_info)
+		for (unsigned i = 0; i < info->register_info.size(); i++)
+		{
+			struct register_info reg_info = info->register_info[i];
 			if (reg_info.name) free((void*)reg_info.name);
+		}
 		free(self.exceptionInfo);
 		self.exceptionInfo = NULL;
 	}
