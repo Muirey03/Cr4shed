@@ -106,7 +106,7 @@
 
 		//get basic info from crash:
 		info->processName = self.procName;
-		info->bundleID = self.bundle_id;
+		info->bundleID = MSHookIvar<NSString*>(self, "_bundle_id");
 		info->exception_type = mach_exception_string(exception, [self signalName]);
 		info->exception_subtype = mach_code_string(exception, exception_codes, codeCnt);
 		info->exception_codes = mach_exception_codes_string(exception_codes, codeCnt);
