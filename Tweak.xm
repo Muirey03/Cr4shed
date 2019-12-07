@@ -87,7 +87,7 @@ static unsigned long getImageVersion(uint32_t img)
 
 static void createCrashLog(NSString* specialisedInfo)
 {
-    markProcessAsHandled(mach_task_self());
+    markProcessAsHandled();
 
     // Format the contents of the new crash log:
     NSDate* now = [NSDate date];

@@ -137,11 +137,11 @@ mach_vm_address_t taskGetImageInfos(mach_port_t task)
 //has been dealt with
 const char* const flag = "com.muirey03.cr4shed-exceptionHandled";
 
-void markProcessAsHandled(mach_port_t task)
+void markProcessAsHandled()
 {
-    mach_vm_address_t image_infos = taskGetImageInfos(task);
+    struct dyld_all_image_infos* image_infos = (struct dyld_all_image_infos*)taskGetImageInfos(mach_task_self());
     if (image_infos)
-        rwrite(task, image_infos + offsetof(struct dyld_all_image_infos, errorMessage), (void*)&flag, sizeof(const char*));
+        image_infos->errorMessage = flag;
 }
 
 bool processHasBeenHandled(mach_port_t task)
