@@ -84,11 +84,11 @@
 	if (processHasBeenHandled(task))
 		return;
 	
+	mach_exception_data_type_t subtype = 0;
+	exception = mach_exception_type(sig, &subtype);
+	exception_codes[0] = subtype;
 	if (exception == EXC_CORPSE_NOTIFY)
 	{
-		mach_exception_data_type_t subtype = 0;
-		exception = mach_exception_type(sig, &subtype);
-		exception_codes[0] = subtype;
 		if (MSHookIvar<NSInteger>(self, "_exceptionCodeCount") > 1)
 			exception_codes[1] = (mach_exception_data_type_t)self.__far;
 			
@@ -209,8 +209,8 @@
 								stackSymbols];
 		
 		//register info:
-		const unsigned int reg_columns = 3;
-		const unsigned int column_width = 22;
+		const unsigned reg_columns = 3;
+		const unsigned column_width = 24;
 		for (unsigned int i = 0; i < info->register_info.size(); i += reg_columns)
 		{
 			struct register_info reg_info = info->register_info[i];
