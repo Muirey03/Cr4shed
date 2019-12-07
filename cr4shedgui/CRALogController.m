@@ -1,13 +1,13 @@
 #import "CRALogController.h"
+#import "Log.h"
 #import "NSString+HTML.h"
 
 @implementation CRALogController
--(id)initWithLog:(NSString*)logFile
+-(instancetype)initWithLog:(Log*)log
 {
-    self = [self init];
-    if (self)
+    if ((self = [self init]))
     {
-        _log = logFile;
+        _log = log;
     }
     return self;
 }
@@ -17,7 +17,7 @@
 	[super loadView];
 
     self.view.backgroundColor = [UIColor whiteColor];
-    NSArray<NSString*>* comp = [_log componentsSeparatedByString:@"@"];
+    NSArray<NSString*>* comp = [[_log.path lastPathComponent] componentsSeparatedByString:@"@"];
     NSString* title = comp.count > 1 ? comp[1] : comp[0];
 	self.title = title;
 
@@ -29,8 +29,7 @@
 
     webView = [WKWebView new];
     webView.scrollView.bounces = NO;
-    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", _log];
-    logMessage = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:NULL];
+    logMessage = [NSString stringWithContentsOfFile:_log.path encoding:NSUTF8StringEncoding error:NULL];
 
     NSString* htmlString =  @"<html><head><title>.</title><meta name='viewport' content='initial-scale=1.0,maximum-scale=3.0'/></head><body><pre style=\"font-size:8pt;\">%@</pre></body></html>";
     NSString* formattedStr = [logMessage kv_encodeHTMLCharacterEntities];

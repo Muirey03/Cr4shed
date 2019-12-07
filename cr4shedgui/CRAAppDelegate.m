@@ -1,6 +1,7 @@
 #import "CRAAppDelegate.h"
 #import "CRARootViewController.h"
 #import "CRALogController.h"
+#import "Log.h"
 
 @implementation CRAAppDelegate
 
@@ -27,7 +28,7 @@
 
 -(void)displayLog:(NSString*)logPath
 {
-	NSString* log = [logPath lastPathComponent];
+	Log* log = [[Log alloc] initWithPath:logPath];
 	CRALogController* logVC = [[CRALogController alloc] initWithLog:log];
 	[_rootViewController pushViewController:logVC animated:YES];
 }

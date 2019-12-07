@@ -4,5 +4,5 @@
 {
     Process* _proc;
 }
--(id)initWithProcess:(Process*)arg1;
+-(instancetype)initWithProcess:(Process*)proc;
 @end

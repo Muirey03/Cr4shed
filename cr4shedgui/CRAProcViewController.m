@@ -1,23 +1,17 @@
 #import "CRAProcViewController.h"
 #import "Process.h"
 #import "CRALogController.h"
+#import "Log.h"
+#import "../sharedutils.h"
 
 @implementation CRAProcViewController
--(id)initWithProcess:(Process*)arg1
+-(instancetype)initWithProcess:(Process*)proc
 {
-    self = [self init];
-    if (self)
+    if ((self = [self init]))
     {
-        _proc = arg1;
-        [_proc.logs sortUsingComparator:^NSComparisonResult(NSString* a, NSString* b) {
-            NSString* path1 = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", a];
-    		NSDictionary* fileAttribs1 = [[NSFileManager defaultManager] attributesOfItemAtPath:path1 error:nil];
-    		NSDate* first = [fileAttribs1 objectForKey:NSFileCreationDate];
-
-            NSString* path2 = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", b];
-            NSDictionary* fileAttribs2 = [[NSFileManager defaultManager] attributesOfItemAtPath:path2 error:nil];
-    		NSDate* second = [fileAttribs2 objectForKey:NSFileCreationDate];
-    	    return [second compare:first];
+        _proc = proc;
+        [_proc.logs sortUsingComparator:^NSComparisonResult(Log* a, Log* b) {
+    	    return [b.date compare:a.date];
     	}];
     }
     return self;
@@ -64,15 +58,10 @@
 {
 	UITableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
 	if (!cell)
-	{
 		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Cell"];
-	}
-    NSString* logName = _proc.logs[indexPath.row];
-    NSArray<NSString*>* comp = [logName componentsSeparatedByString:@"@"];
-    logName = comp.count > 1 ? comp[1] : comp[0];
-    logName = [logName stringByDeletingPathExtension];
-    logName = [logName stringByReplacingOccurrencesOfString:@"-" withString:@"/"];
-    logName = [logName stringByReplacingOccurrencesOfString:@"_" withString:@" "];
+    
+    Log* log = _proc.logs[indexPath.row];
+    NSString* logName = stringFromDate(log.date, CR4DateFormatPretty);
     cell.textLabel.text = logName;
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	return cell;
@@ -85,12 +74,15 @@
         if (_proc.logs.count > 1)
         {
             //get new latestDate
-            NSString* newPath = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", _proc.logs[1]];
-            NSDictionary* fileAttribs = [[NSFileManager defaultManager] attributesOfItemAtPath:newPath error:nil];
-            _proc.latestDate = [fileAttribs objectForKey:NSFileCreationDate];
+            Log* newLog = _proc.logs[1];
+            _proc.latestDate = newLog.date;
+        }
+        else
+        {
+            _proc.latestDate = nil;
         }
     }
-    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", _proc.logs[indexPath.row]];
+    NSString* path = _proc.logs[indexPath.row].path;
     [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
 	[_proc.logs removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];

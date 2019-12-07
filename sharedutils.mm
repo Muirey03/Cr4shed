@@ -6,6 +6,8 @@
 #import "MobileGestalt/MobileGestalt.h"
 #import "sharedutils.h"
 
+extern "C" {
+
 NSString* getImage(NSString* symbol)
 {
     int startingI = -1;
@@ -62,8 +64,6 @@ NSString* stringFromDate(NSDate* date, CR4DateFormat type)
             needsLowercase = YES;
 			[formatter setDateFormat:@"yyyy-MM-dd_h:mm_a"];
 			break;
-		default:
-			return @"Unknown format type! :(";
 	}
     NSString* ret = [formatter stringFromDate:date];
     return needsLowercase ? [ret lowercaseString] : ret;
@@ -164,4 +164,6 @@ bool processHasBeenHandled(mach_port_t task)
         }
     }
     return handled;
+}
+
 }

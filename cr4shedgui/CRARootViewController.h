@@ -6,6 +6,10 @@
 @end
 
 @interface CRARootViewController : UITableViewController
+{
+	UIRefreshControl* _refreshControl;
+}
+-(void)refreshTable:(UIRefreshControl*)control;
 -(void)sortProcs;
 -(void)loadLogs;
 @end

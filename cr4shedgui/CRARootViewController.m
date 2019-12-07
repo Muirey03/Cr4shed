@@ -1,18 +1,8 @@
 #import "CRARootViewController.h"
 #import "CRAProcViewController.h"
 #import "Process.h"
-
-@implementation Process
--(id)init
-{
-	self = [super init];
-	if (self)
-	{
-		_logs = [NSMutableArray new];
-	}
-	return self;
-}
-@end
+#import "Log.h"
+#import "../sharedutils.h"
 
 @implementation ProcessCell
 -(void)didMoveToWindow
@@ -20,12 +10,9 @@
 	[super didMoveToWindow];
 
 	self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-
 	self.textLabel.text = _proc.name;
 
-	NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
-	[formatter setDateFormat:@"yyyy/MM/dd HH:mm"];
-	self.detailTextLabel.text = [formatter stringFromDate:_proc.latestDate];
+	self.detailTextLabel.text = stringFromDate(_proc.latestDate, CR4DateFormatPretty);
 
 	if (!_countLbl)
 	{
@@ -48,6 +35,16 @@
 	NSMutableArray<Process*>* _procs;
 }
 
+-(instancetype)init
+{
+	if ((self = [super init]))
+	{
+		//UIApplicationDidBecomeActiveNotification
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
+	}
+	return self;
+}
+
 -(void)loadView
 {
 	[super loadView];
@@ -60,19 +57,26 @@
 	self.tableView.rowHeight = 50;
 
 	//pull to refresh:
-	UIRefreshControl* refreshControl = [[UIRefreshControl alloc]init];
-    [refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
+	_refreshControl = [UIRefreshControl new];
+    [_refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
 	if ([self.tableView respondsToSelector:@selector(setRefreshControl:)])
-        self.tableView.refreshControl = refreshControl;
+        self.tableView.refreshControl = _refreshControl;
 	else
-        [self.tableView addSubview:refreshControl];
+        [self.tableView addSubview:_refreshControl];
 }
 
--(void)refreshTable:(UIRefreshControl*)control
+-(void)viewDidLoad
+{
+	[super viewDidLoad];
+	[self refreshTable:nil];
+}
+
+-(void)refreshTable:(id)obj
 {
 	[self loadLogs];
+	if (_refreshControl.refreshing)
+		[_refreshControl endRefreshing];
 	[self.tableView reloadData];
-	[control endRefreshing];
 }
 
 -(void)viewDidAppear:(BOOL)arg1
@@ -82,30 +86,13 @@
     self.navigationController.interactivePopGestureRecognizer.enabled = NO;
 }
 
--(void)viewWillAppear:(BOOL)arg1
-{
-	[super viewWillAppear:arg1];
-
-	//UIApplicationDidBecomeActiveNotification
-	static void (^handler)(void) = nil;
-	if (handler) [[NSNotificationCenter defaultCenter] removeObserver:handler];
-	handler = ^{
-		[self loadLogs];
-		[self.tableView reloadData];
-	};
-	[[NSNotificationCenter defaultCenter] addObserver:handler selector:@selector(invoke) name:UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
-
-	[self sortProcs];
-	[self.tableView reloadData];
-}
-
 -(void)sortProcs
 {
-	_procs = [[_procs sortedArrayUsingComparator:^NSComparisonResult(Process* a, Process* b) {
+	[_procs sortUsingComparator:^NSComparisonResult(Process* a, Process* b) {
 	    NSDate* first = a.latestDate;
-	    NSDate* second = a.latestDate;
-	    return [first compare:second];
-	}] mutableCopy];
+	    NSDate* second = b.latestDate; 
+	    return [second compare:first];
+	}];
 	for (int i = 0; i < _procs.count; i++)
 	{
 		if (_procs[i].logs.count == 0)
@@ -118,48 +105,45 @@
 
 -(void)loadLogs
 {
-	_procs = [[NSMutableArray alloc] init];
+	_procs = [NSMutableArray new];
 	//loop through all logs
-	NSMutableArray* files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/var/mobile/Library/Cr4shed" error:nil] mutableCopy];
+	NSString* const logsDirectory = @"/var/mobile/Library/Cr4shed";
+	NSMutableArray* files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:logsDirectory error:nil] mutableCopy];
 	for (int i = 0; i < files.count; i++)
 	{
-		NSString* file = files[i];
-		if (![[file pathExtension] isEqualToString:@"log"])
+		NSString* fileName = files[i];
+		NSString* filePath = [logsDirectory stringByAppendingPathComponent:fileName];
+		if (![[fileName pathExtension] isEqualToString:@"log"])
 		{
 			[files removeObjectAtIndex:i];
 			i--;
 			continue;
 		}
 		//file is a log
-		Process* proc;
-		NSArray* comp = [file componentsSeparatedByString:@"@"];
-		NSString* name = comp.count > 1 ? comp[0] : @"(null)";
+		Process* proc = nil;
+		NSArray<NSString*>* comp = [fileName componentsSeparatedByString:@"@"];
+		NSString* procName = comp.count > 1 ? comp[0] : @"(null)";
 
 		//check if process is already in array
-		BOOL inArray = NO;
 		for (Process* p in _procs)
 		{
-			if ([p.name isEqualToString:name])
+			if ([p.name isEqualToString:procName])
 			{
 				proc = p;
-				inArray = YES;
 				break;
 			}
 		}
-		if (!inArray)
+		if (!proc)
 		{
 			//process isn't in array, add it
-			proc = [Process new];
-			proc.name = name;
+			proc = [[Process alloc] initWithName:procName];
 			[_procs addObject:proc];
 		}
-		[proc.logs addObject:file];
+		Log* log = [[Log alloc] initWithPath:filePath];
+		[proc.logs addObject:log];
 
-		//get date:
-		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", file];
-		NSDictionary* fileAttribs = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
-		NSDate* date = [fileAttribs objectForKey:NSFileCreationDate];
-		if (!inArray || [proc.latestDate compare:date] == NSOrderedAscending)
+		NSDate* date = log.date;
+		if (!proc.latestDate || [proc.latestDate compare:date] == NSOrderedAscending)
 		{
 			proc.latestDate = date;
 		}
@@ -194,10 +178,9 @@
 -(void)tableView:(UITableView*)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath*)indexPath
 {
 	Process* proc = _procs[indexPath.row];
-	for (NSString* file in proc.logs)
+	for (Log* log in proc.logs)
 	{
-		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@", file];
-		[[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+		[[NSFileManager defaultManager] removeItemAtPath:log.path error:NULL];
 	}
 	[_procs removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
