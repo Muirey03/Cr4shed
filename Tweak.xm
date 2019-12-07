@@ -152,16 +152,32 @@ void createNSExceptionLog(NSException* e)
 
     NSString* culprit = determineCulprit(e.callStackSymbols);
     NSString* stackSymbols = getCallStack(e);
-    NSString* info = [NSString stringWithFormat:@"Exception type: %@\n"
-                                                @"Reason: %@\n"
-                                                @"Culprit: %@\n\n"
-                                                @"Call stack:\n%@",
-                                                e.name,
-                                                e.reason,
-                                                culprit,
-                                                stackSymbols];
+    NSMutableString* info = [NSMutableString stringWithFormat:  @"Exception type: %@\n"
+                                                                @"Reason: %@\n"
+                                                                @"Culprit: %@\n\n",
+                                                                e.name,
+                                                                e.reason,
+                                                                culprit];
 
-    createCrashLog(info);
+    NSDictionary* excUserInfo = e.userInfo;
+    if (excUserInfo.allKeys.count)
+    {
+        NSMutableString* userInfoStr = [@"User info:\n" mutableCopy];
+        for (NSString* key in excUserInfo.allKeys)
+        {
+            NSString* objStr = [excUserInfo[key] description];
+            //if it is multi-line, insert a '\n' at the start
+            if ([objStr componentsSeparatedByString:@"\n"].count > 1)
+                objStr = [@"\n" stringByAppendingString:objStr];
+            if (!objStr.length) objStr = @"N/A";
+            [userInfoStr appendFormat:@"%@: %@\n", key, objStr];
+        }
+        [userInfoStr appendString:@"\n"];
+        [info appendString:userInfoStr];
+    }
+
+    [info appendFormat:@"Call stack:\n%@", stackSymbols];
+    createCrashLog([info copy]);
 }
 
 void unhandledExceptionHandler(NSException* e)
