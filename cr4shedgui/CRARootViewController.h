@@ -13,7 +13,3 @@
 -(void)sortProcs;
 -(void)loadLogs;
 @end
-
-@interface UITableView (iOS10)
--(void)setRefreshControl:(id)arg1;
-@end

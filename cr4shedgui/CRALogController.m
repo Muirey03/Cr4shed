@@ -16,6 +16,11 @@
 {
 	[super loadView];
 
+    if ([self.navigationItem respondsToSelector:@selector(setLargeTitleDisplayMode:)])
+    {
+        self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    }
+
     self.view.backgroundColor = [UIColor whiteColor];
     NSArray<NSString*>* comp = [[_log.path lastPathComponent] componentsSeparatedByString:@"@"];
     NSString* title = comp.count > 1 ? comp[1] : comp[0];

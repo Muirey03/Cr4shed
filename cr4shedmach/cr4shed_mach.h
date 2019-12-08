@@ -20,7 +20,7 @@ struct exception_info
 
 @interface CrashReport : NSObject
 @property (nonatomic, retain) NSString* procName;
-@property (nonatomic, assign) exception_type_t exceptionType;
+//%new properties
 @property (nonatomic, retain) NSDate* crashDate;
 @property (nonatomic, assign) uint64_t __far;
 @property (nonatomic, assign) struct exception_info* exceptionInfo;

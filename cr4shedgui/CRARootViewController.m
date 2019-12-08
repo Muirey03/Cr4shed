@@ -49,6 +49,11 @@
 {
 	[super loadView];
 
+	if ([self.navigationController.navigationBar respondsToSelector:@selector(setPrefersLargeTitles:)])
+	{
+		self.navigationController.navigationBar.prefersLargeTitles = YES;
+	}
+
 	self.title = @"Cr4shed";
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
