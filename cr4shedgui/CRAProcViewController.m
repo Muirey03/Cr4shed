@@ -99,4 +99,31 @@
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
+-(void)setEditing:(BOOL)editing animated:(BOOL)animated
+{
+	[super setEditing:editing animated:animated];
+
+	UIBarButtonItem* item = nil;
+	if (editing)
+	{
+		item = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(removeAllLogs)];
+	}
+	[self.navigationItem setLeftBarButtonItem:item animated:animated];
+}
+
+-(void)removeAllLogs
+{
+	NSMutableArray* indexPaths = [[NSMutableArray alloc] initWithCapacity:_proc.logs.count];
+	for (NSUInteger i = 0; i < _proc.logs.count; i++)
+	{
+		NSIndexPath* indexPath = [NSIndexPath indexPathForRow:i inSection:0];
+		[indexPaths addObject:indexPath];
+	}
+    [_proc deleteAllLogs];
+	[self.tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationAutomatic];
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
+    [self.navigationController popViewControllerAnimated:YES];
+}
+
 @end

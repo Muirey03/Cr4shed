@@ -20,7 +20,7 @@
 		_countLbl.clipsToBounds = YES;
 		_countLbl.translatesAutoresizingMaskIntoConstraints = NO;
 
-		[self addSubview:_countLbl];
+		[self.contentView addSubview:_countLbl];
 
 		[_countLbl.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-10.].active = YES;
 		[_countLbl.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = YES;
@@ -205,10 +205,7 @@
 -(void)tableView:(UITableView*)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath*)indexPath
 {
 	Process* proc = _procs[indexPath.row];
-	for (Log* log in proc.logs)
-	{
-		[[NSFileManager defaultManager] removeItemAtPath:log.path error:NULL];
-	}
+	[proc deleteAllLogs];
 	[_procs removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
 }
@@ -220,6 +217,32 @@
 	CRAProcViewController* procVC = [[CRAProcViewController alloc] initWithProcess:_procs[indexPath.row]];
 	[self.navigationController pushViewController:procVC animated:YES];
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+-(void)setEditing:(BOOL)editing animated:(BOOL)animated
+{
+	[super setEditing:editing animated:animated];
+
+	UIBarButtonItem* item = nil;
+	if (editing)
+	{
+		item = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemTrash target:self action:@selector(removeAllLogs)];
+	}
+	[self.navigationItem setLeftBarButtonItem:item animated:animated];
+}
+
+-(void)removeAllLogs
+{
+	NSMutableArray* indexPaths = [[NSMutableArray alloc] initWithCapacity:_procs.count];
+	for (NSUInteger i = 0; i < _procs.count; i++)
+	{
+		NSIndexPath* indexPath = [NSIndexPath indexPathForRow:i inSection:0];
+		Process* proc = _procs[i];
+		[proc deleteAllLogs];
+		[indexPaths addObject:indexPath];
+	}
+	_procs = [NSMutableArray new];
+	[self.tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationAutomatic];
 }
 
 -(void)dealloc

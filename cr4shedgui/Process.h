@@ -5,4 +5,5 @@
 @property (nonatomic, retain) NSDate* latestDate;
 @property (nonatomic, retain) NSMutableArray<Log*>* logs;
 -(instancetype)initWithName:(NSString*)procName;
+-(void)deleteAllLogs;
 @end
