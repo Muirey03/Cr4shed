@@ -5,28 +5,47 @@
 #import "../sharedutils.h"
 
 @implementation ProcessCell
--(void)didMoveToWindow
+-(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString*)reuseIdentifier
 {
-	[super didMoveToWindow];
-
-	self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-	self.textLabel.text = _proc.name;
-
-	self.detailTextLabel.text = stringFromDate(_proc.latestDate, CR4DateFormatPretty);
-
-	if (!_countLbl)
+	if ((self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]))
 	{
-		_countLbl = [[UILabel alloc] init];
-		[self addSubview:_countLbl];
-	}
-	_countLbl.text = [NSString stringWithFormat:@"(%lu)", (unsigned long)_proc.logs.count];
-	_countLbl.textColor = self.detailTextLabel.textColor;
-	_countLbl.textAlignment = NSTextAlignmentCenter;
+		self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+		
+		_countLbl = [[UILabel alloc] initWithFrame:CGRectZero];
+		_countLbl.font = [UIFont systemFontOfSize:15.];
+		_countLbl.textColor = [UIColor whiteColor];
+		_countLbl.backgroundColor = [UIColor systemRedColor];
+		_countLbl.textAlignment = NSTextAlignmentCenter;
+		_countLbl.numberOfLines = 1;
+		_countLbl.clipsToBounds = YES;
+		_countLbl.translatesAutoresizingMaskIntoConstraints = NO;
 
-	_countLbl.translatesAutoresizingMaskIntoConstraints = NO;
-	[_countLbl.heightAnchor constraintEqualToAnchor:self.heightAnchor].active = YES;
-	[_countLbl.widthAnchor constraintEqualToAnchor:self.heightAnchor].active = YES;
-	[_countLbl.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor].active = YES;
+		[self addSubview:_countLbl];
+
+		[_countLbl.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor].active = YES;
+		[_countLbl.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = YES;
+	}
+	return self;
+}
+
+-(void)updateLabels
+{
+	self.textLabel.text = _proc.name;
+	self.detailTextLabel.text = stringFromDate(_proc.latestDate, CR4DateFormatPretty);
+	_countLbl.text = [NSString stringWithFormat:@"%llu", (unsigned long long)_proc.logs.count];	
+
+	const CGFloat badgeHeight = 20.;
+	const CGFloat minBadgePadding = 10.;
+	CGFloat minBadgeWidth = badgeHeight * 1.5;
+	CGFloat badgeWidth = [_countLbl.text boundingRectWithSize:CGSizeZero options:NSStringDrawingUsesLineFragmentOrigin| NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : _countLbl.font} context:nil].size.width + minBadgePadding;
+	badgeWidth = MAX(badgeWidth, minBadgeWidth);
+
+	if (_widthConstraint) _widthConstraint.active = NO;
+	if (_heightConstraint) _heightConstraint.active = NO;
+	_widthConstraint = [_countLbl.widthAnchor constraintEqualToConstant:badgeWidth];
+	_heightConstraint = [_countLbl.heightAnchor constraintEqualToConstant:badgeHeight];
+	[NSLayoutConstraint activateConstraints:@[_widthConstraint, _heightConstraint]];
+	_countLbl.layer.cornerRadius = MIN(badgeHeight, badgeWidth) / 2.;
 }
 @end
 
@@ -177,6 +196,7 @@
 		cell = [[ProcessCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Cell"];
 	}
 	cell.proc = _procs[indexPath.row];
+	[cell updateLabels];
 	return cell;
 }
 
