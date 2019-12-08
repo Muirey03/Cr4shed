@@ -159,6 +159,7 @@ void createNSExceptionLog(NSException* e)
                                                                 e.reason,
                                                                 culprit];
 
+    //user info (for Supercharge):
     NSDictionary* excUserInfo = e.userInfo;
     if (excUserInfo.allKeys.count)
     {

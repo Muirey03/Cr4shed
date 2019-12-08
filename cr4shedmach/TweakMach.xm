@@ -151,8 +151,14 @@
 					uuid_unparse(uuid, uuid_cstr);
 					if (uuid_cstr)
 					{
+						//calculate padding
+						NSArray* comp = [callStackSymbols[si] componentsSeparatedByString:@" "];
+						NSString* str = [[comp subarrayWithRange:NSMakeRange(0, comp.count - 1)] componentsJoinedByString:@" "];
+						NSUInteger padding = str.length + 12;
+
 						NSString* uuidStr = [NSString stringWithUTF8String:uuid_cstr];
 						NSString* symbol = nameForSymbolOffsetInImage(addr, [imgDict[@"ExecutablePath"] UTF8String], uuidStr, [imgDict[@"StartAddress"] unsignedLongLongValue], arch);
+						callStackSymbols[si] = [callStackSymbols[si] stringByPaddingToLength:padding withString:@" " startingAtIndex:0];
 						callStackSymbols[si] = [callStackSymbols[si] stringByAppendingFormat:@"\t// %@", symbol];
 						free(uuid_cstr);
 					}

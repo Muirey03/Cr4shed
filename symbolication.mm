@@ -150,7 +150,7 @@ NSString* nameForSymbolOffsetInImage(uint64_t addr, const char* path, NSString* 
     return nil;
 }
 
-NSString* nameForSymbol(NSNumber* addrNum)
+NSString* nameForSymbol(NSNumber* addrNum, uint64_t* outOffset)
 {
     void* addrPtr = (void*)[addrNum integerValue];
     Dl_info info = { NULL, NULL, NULL, NULL };
@@ -165,6 +165,7 @@ NSString* nameForSymbol(NSNumber* addrNum)
             uint64_t base = CSSymbolOwnerGetBaseAddress(owner);
             uint64_t imgAddr = (uint64_t)info.dli_fbase;
             uint64_t symOffset = (uint64_t)symAddr + base - imgAddr;
+            if (outOffset) *outOffset = (uint64_t)addrPtr - imgAddr;
             CSSymbolRef symbol = CSSymbolOwnerGetSymbolWithAddress(owner, symOffset);
             if (!CSIsNull(symbol))
             {
@@ -180,7 +181,8 @@ NSArray* symbolicatedStackSymbols(NSArray* callStackSymbols, NSArray* callStackR
     NSMutableArray* symArr = [callStackSymbols mutableCopy];
     for (int i = 0; i < callStackSymbols.count; i++)
     {
-        NSString* symName = nameForSymbol(callStackReturnAddresses[i]);
+        uint64_t offset = 0;
+        NSString* symName = nameForSymbol(callStackReturnAddresses[i], &offset);
         if (symName)
         {
             NSMutableArray* components = [[symArr[i] componentsSeparatedByString:@" "] mutableCopy];
@@ -189,7 +191,10 @@ NSArray* symbolicatedStackSymbols(NSArray* callStackSymbols, NSArray* callStackR
                 [components removeObjectAtIndex:(components.count - 1)];
             }
             NSString* newSym = [components componentsJoinedByString:@" "];
-            newSym = [NSString stringWithFormat:@"%@ %@", newSym, symName];
+            NSUInteger padding = newSym.length + 30;
+            newSym = [NSString stringWithFormat:@"%@ 0x%llx + 0x%llx", newSym, [callStackReturnAddresses[i] unsignedLongLongValue] - offset, offset];
+            newSym = [newSym stringByPaddingToLength:padding withString:@" " startingAtIndex:0];
+            newSym = [newSym stringByAppendingFormat:@" // %@", symName];
             symArr[i] = newSym;
         }
     }
