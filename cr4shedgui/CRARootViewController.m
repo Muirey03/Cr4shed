@@ -22,7 +22,7 @@
 
 		[self addSubview:_countLbl];
 
-		[_countLbl.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor].active = YES;
+		[_countLbl.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-10.].active = YES;
 		[_countLbl.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = YES;
 	}
 	return self;
