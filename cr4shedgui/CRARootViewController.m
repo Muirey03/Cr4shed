@@ -60,6 +60,8 @@
 	{
 		//UIApplicationDidBecomeActiveNotification
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
+		//CR4ProcsNeedRefreshNotificationName
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:CR4ProcsNeedRefreshNotificationName object:nil];
 	}
 	return self;
 }
@@ -218,6 +220,11 @@
 	CRAProcViewController* procVC = [[CRAProcViewController alloc] initWithProcess:_procs[indexPath.row]];
 	[self.navigationController pushViewController:procVC animated:YES];
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+}
+
+-(void)dealloc
+{
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end

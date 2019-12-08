@@ -86,6 +86,8 @@
     [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
 	[_proc.logs removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
 }
 
 #pragma mark - Table View Delegate
