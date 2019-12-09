@@ -13,6 +13,7 @@
         [_proc.logs sortUsingComparator:^NSComparisonResult(Log* a, Log* b) {
     	    return [b.date compare:a.date];
     	}];
+        self.title = _proc.name;
     }
     return self;
 }
@@ -21,10 +22,7 @@
 {
 	[super loadView];
 
-	self.title = _proc.name;
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
-    UIBarButtonItem* backButton = [[UIBarButtonItem alloc] initWithTitle:@"Back" style:UIBarButtonItemStyleDone target:nil action:nil];
-    self.navigationItem.backBarButtonItem = backButton;
 
 	//remove extra separators
 	self.tableView.tableFooterView = [UIView new];

@@ -1,5 +1,6 @@
 #import "CRAAppDelegate.h"
 #import "CRARootViewController.h"
+#import "CRASettingsViewController.h"
 #import "CRALogController.h"
 #import "Log.h"
 
@@ -11,8 +12,13 @@
 
 	//create UI:
 	_window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-	_rootViewController = [[UINavigationController alloc] initWithRootViewController:[[CRARootViewController alloc] init]];
-	_window.rootViewController = _rootViewController;
+	
+	_rootViewController = [[UINavigationController alloc] initWithRootViewController:[CRARootViewController new]];
+	_settingsViewController = [[UINavigationController alloc] initWithRootViewController:[CRASettingsViewController newSettingsController]];
+
+	_tabBarVC = [UITabBarController new];
+	_tabBarVC.viewControllers = @[_rootViewController, _settingsViewController];
+	_window.rootViewController = _tabBarVC;
 	[_window makeKeyAndVisible];
 
 	//reset badge number:
@@ -33,6 +39,7 @@
 {
 	Log* log = [[Log alloc] initWithPath:logPath];
 	CRALogController* logVC = [[CRALogController alloc] initWithLog:log];
+	_tabBarVC.selectedViewController = _rootViewController;
 	[_rootViewController pushViewController:logVC animated:YES];
 }
 

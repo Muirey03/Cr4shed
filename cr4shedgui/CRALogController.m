@@ -8,6 +8,9 @@
     if ((self = [self init]))
     {
         _log = log;
+        NSArray<NSString*>* comp = [[_log.path lastPathComponent] componentsSeparatedByString:@"@"];
+        NSString* title = comp.count > 1 ? comp[1] : comp[0];
+        self.title = title;
     }
     return self;
 }
@@ -17,17 +20,9 @@
 	[super loadView];
 
     if ([self.navigationItem respondsToSelector:@selector(setLargeTitleDisplayMode:)])
-    {
         self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    }
 
     self.view.backgroundColor = [UIColor whiteColor];
-    NSArray<NSString*>* comp = [[_log.path lastPathComponent] componentsSeparatedByString:@"@"];
-    NSString* title = comp.count > 1 ? comp[1] : comp[0];
-	self.title = title;
-
-    UIBarButtonItem* backButton = [[UIBarButtonItem alloc] initWithTitle:@"Back" style:UIBarButtonItemStyleDone target:nil action:nil];
-    self.navigationItem.backBarButtonItem = backButton;
 
     UIBarButtonItem* shareButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(share:)];
     self.navigationItem.rightBarButtonItem = shareButton;

@@ -3,6 +3,7 @@
 #import "Process.h"
 #import "Log.h"
 #import "../sharedutils.h"
+#import "UIImage+UIKitImage.h"
 
 @implementation ProcessCell
 -(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString*)reuseIdentifier
@@ -62,6 +63,10 @@
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
 		//CR4ProcsNeedRefreshNotificationName
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:CR4ProcsNeedRefreshNotificationName object:nil];
+	
+		self.title = @"Cr4shed";
+		UIImage* itemImg = [[UIImage uikitImageNamed:@"UIButtonBarBookmarks"] resizeToWidth:25.];
+		self.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"Reports" image:itemImg tag:0];
 	}
 	return self;
 }
@@ -71,11 +76,8 @@
 	[super loadView];
 
 	if ([self.navigationController.navigationBar respondsToSelector:@selector(setPrefersLargeTitles:)])
-	{
 		self.navigationController.navigationBar.prefersLargeTitles = YES;
-	}
 
-	self.title = @"Cr4shed";
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
 	//remove extra separators
@@ -114,8 +116,13 @@
 
 -(void)sortProcs
 {
+	NSString* sortingMethod = [[NSUserDefaults standardUserDefaults] objectForKey:@"SortingMethod"];
 	[_procs sortUsingComparator:^NSComparisonResult(Process* a, Process* b) {
-	    NSDate* first = a.latestDate;
+		//Date = @"Date" or nil
+		//Name = @"Name"
+		if ([sortingMethod isEqualToString:@"Name"])
+			return [[a.name lowercaseString] compare:[b.name lowercaseString]];
+		NSDate* first = a.latestDate;
 	    NSDate* second = b.latestDate; 
 	    return [second compare:first];
 	}];

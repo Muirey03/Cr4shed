@@ -17,4 +17,5 @@ after-install::
 SUBPROJECTS += cr4shedsb
 SUBPROJECTS += cr4shedgui
 SUBPROJECTS += cr4shedmach
+SUBPROJECTS += frpreferences
 include $(THEOS_MAKE_PATH)/aggregate.mk

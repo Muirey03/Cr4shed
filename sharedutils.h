@@ -1,5 +1,7 @@
 #include <mach/mach.h>
 
+#define CR4ProcsNeedRefreshNotificationName @"com.muirey03.cr4shed-procsNeedRefresh"
+
 typedef NS_ENUM(NSInteger, CR4DateFormat)
 {
     CR4DateFormatPretty,
