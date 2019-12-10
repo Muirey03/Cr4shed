@@ -15,7 +15,7 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 after-install::
 	install.exec "killall -9 backboardd"
 SUBPROJECTS += cr4shedsb
-#SUBPROJECTS += cr4shedgui
+SUBPROJECTS += cr4shedgui
 SUBPROJECTS += cr4shedmach
 SUBPROJECTS += frpreferences
 include $(THEOS_MAKE_PATH)/aggregate.mk
