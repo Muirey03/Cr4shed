@@ -1,10 +1,13 @@
 @import Foundation;
 
+#import <CoreGraphics/CoreGraphics.h>
+#import <objc/runtime.h>
 #include <stdlib.h>
 #include <string.h>
 #include <mach-o/dyld_images.h>
 #import "MobileGestalt/MobileGestalt.h"
 #import "sharedutils.h"
+#import "Cephei/HBPreferences.h"
 
 extern "C" {
 
@@ -166,4 +169,26 @@ bool processHasBeenHandled(mach_port_t task)
     return handled;
 }
 
+HBPreferences* sharedPreferences()
+{
+    static HBPreferences* prefs = nil;
+    if (!prefs)
+    {
+        NSString* const frameworkPath = @"/usr/lib/Cephei.framework";
+        NSBundle* bundle = [NSBundle bundleWithPath:frameworkPath];
+        if (!bundle.loaded)
+            [bundle load];
+        prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
+    }
+    return prefs;
+}
+
+}
+
+bool isBlacklisted(NSString* procName)
+{
+    if (!procName) procName = [NSProcessInfo processInfo].processName;
+    HBPreferences* prefs = sharedPreferences();
+	NSArray<NSString*>* blacklist = [prefs objectForKey:kProcessBlacklist];
+	return (blacklist && [blacklist containsObject:procName]);
 }

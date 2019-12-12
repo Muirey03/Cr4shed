@@ -99,7 +99,7 @@
 		}
 	}
 
-	if (![self isExceptionNonFatal] && sig != 0)
+	if (![self isExceptionNonFatal] && sig != 0 && !isBlacklisted(self.procName))
 	{
 		struct exception_info* info = (struct exception_info*)malloc(sizeof(struct exception_info));
 		memset((void*)info, 0, sizeof(struct exception_info));

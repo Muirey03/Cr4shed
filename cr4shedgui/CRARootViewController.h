@@ -17,8 +17,10 @@
 -(void)refreshTable:(UIRefreshControl*)control;
 -(void)sortProcs;
 -(void)loadLogs;
+-(void)deleteProcessAtIndexPath:(NSIndexPath*)indexPath;
 @end
 
 @interface UIColor (System)
 @property(class, nonatomic, readonly) UIColor* systemRedColor;
+@property(class, nonatomic, readonly) UIColor* systemBlueColor;
 @end

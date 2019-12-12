@@ -6,4 +6,7 @@
 @property (nonatomic, retain) NSMutableArray<Log*>* logs;
 -(instancetype)initWithName:(NSString*)procName;
 -(void)deleteAllLogs;
+-(void)addToBlacklist;
+-(void)removeFromBlacklist;
+-(BOOL)isBlacklisted;
 @end

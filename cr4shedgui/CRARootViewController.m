@@ -4,6 +4,7 @@
 #import "Log.h"
 #import "../sharedutils.h"
 #import "UIImage+UIKitImage.h"
+#import "Cephei/HBPreferences.h"
 
 @implementation ProcessCell
 -(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString*)reuseIdentifier
@@ -116,7 +117,7 @@
 
 -(void)sortProcs
 {
-	NSString* sortingMethod = [[NSUserDefaults standardUserDefaults] objectForKey:@"SortingMethod"];
+	NSString* sortingMethod = [[NSUserDefaults standardUserDefaults] objectForKey:kSortingMethod];
 	[_procs sortUsingComparator:^NSComparisonResult(Process* a, Process* b) {
 		//Date = @"Date" or nil
 		//Name = @"Name"
@@ -185,6 +186,14 @@
 	[self sortProcs];
 }
 
+-(void)deleteProcessAtIndexPath:(NSIndexPath*)indexPath
+{
+	Process* proc = _procs[indexPath.row];
+	[proc deleteAllLogs];
+	[_procs removeObjectAtIndex:indexPath.row];
+	[self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+}
+
 #pragma mark - Table View Data Source
 
 -(NSInteger)numberOfSectionsInTableView:(UITableView*)tableView
@@ -199,10 +208,10 @@
 
 -(UITableViewCell*)tableView:(UITableView*)tableView cellForRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	ProcessCell* cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
+	ProcessCell* cell = [tableView dequeueReusableCellWithIdentifier:@"ProcessCell"];
 	if (!cell)
 	{
-		cell = [[ProcessCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Cell"];
+		cell = [[ProcessCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"ProcessCell"];
 	}
 	cell.proc = _procs[indexPath.row];
 	[cell updateLabels];
@@ -211,13 +220,33 @@
 
 -(void)tableView:(UITableView*)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	Process* proc = _procs[indexPath.row];
-	[proc deleteAllLogs];
-	[_procs removeObjectAtIndex:indexPath.row];
-	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+	[self deleteProcessAtIndexPath:indexPath];
 }
 
 #pragma mark - Table View Delegate
+
+-(UISwipeActionsConfiguration*)tableView:(UITableView*)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath*)indexPath
+{
+	Process* proc = _procs[indexPath.row];
+	UIContextualAction* deleteAction = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive title:@"Delete" handler:^(UIContextualAction* action, UIView* sourceView, void (^completionHandler)(BOOL)){
+		[self deleteProcessAtIndexPath:indexPath];
+		completionHandler(YES);
+	}];
+	BOOL isBlacklisted = [proc isBlacklisted];
+	NSString* blacklistTitle = isBlacklisted ? @"Un-blacklist" : @"Blacklist";
+	UIContextualAction* blacklistAction = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal title:blacklistTitle handler:^(UIContextualAction* action, UIView* sourceView, void (^completionHandler)(BOOL)){
+		if (isBlacklisted)
+			[proc removeFromBlacklist];
+		else
+			[proc addToBlacklist];
+		[[NSNotificationCenter defaultCenter] postNotificationName:CR4BlacklistDidChangeNotificationName object:nil];
+		completionHandler(YES);
+	}];
+	blacklistAction.backgroundColor = [UIColor systemBlueColor];
+	NSArray<UIContextualAction*>* actions = @[deleteAction, blacklistAction];
+	UISwipeActionsConfiguration* config = [UISwipeActionsConfiguration configurationWithActions:actions];
+	return config;
+}
 
 -(void)tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath*)indexPath
 {

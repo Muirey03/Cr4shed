@@ -4,6 +4,8 @@
 -(instancetype)initTableWithSections:(NSArray*)sections;
 @end
 
+@class HBPreferences;
 @interface CRASettingsViewController : FRPreferences
 +(instancetype)newSettingsController;
+-(void)updatePrefsWithKey:(NSString*)key value:(id)value;
 @end

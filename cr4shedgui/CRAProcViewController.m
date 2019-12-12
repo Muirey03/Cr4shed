@@ -54,9 +54,9 @@
 
 -(UITableViewCell*)tableView:(UITableView*)tableView cellForRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	UITableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
+	UITableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:@"LogCell"];
 	if (!cell)
-		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Cell"];
+		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"LogCell"];
     
     Log* log = _proc.logs[indexPath.row];
     NSString* logName = stringFromDate(log.date, CR4DateFormatPretty);

@@ -7,6 +7,8 @@
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
 
+#import "RemoteLog.h"
+
 #define isSB [[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"]
 
 static void writeStringToFile(NSString* str, NSString* path)
@@ -87,6 +89,8 @@ static unsigned long getImageVersion(uint32_t img)
 
 static void createCrashLog(NSString* specialisedInfo)
 {
+    if (isBlacklisted()) return;
+
     markProcessAsHandled();
 
     // Format the contents of the new crash log:
