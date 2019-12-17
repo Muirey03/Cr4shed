@@ -20,10 +20,13 @@
 	_tabBarVC.viewControllers = @[_rootViewController, _settingsViewController];
 	_window.rootViewController = _tabBarVC;
 	[_window makeKeyAndVisible];
+	return YES;
+}
 
+-(void)applicationDidBecomeActive:(UIApplication*)application
+{
 	//reset badge number:
 	[application setApplicationIconBadgeNumber:0];
-	return YES;
 }
 
 -(void)userNotificationCenter:(UNUserNotificationCenter*)center didReceiveNotificationResponse:(UNNotificationResponse*)response withCompletionHandler:(void (^)(void))completionHandler
