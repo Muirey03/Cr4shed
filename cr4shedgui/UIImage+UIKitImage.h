@@ -5,4 +5,5 @@
 @interface UIImage (UIKitImage)
 +(UIImage*)uikitImageNamed:(NSString*)name;
 -(UIImage*)resizeToWidth:(CGFloat)newWidth;
+-(UIImage*)resizeToHeight:(CGFloat)newHeight;
 @end

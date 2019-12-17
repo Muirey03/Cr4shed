@@ -4,6 +4,6 @@ Depends: mobilesubstrate, com.rpetrich.rocketbootstrap, com.rpetrich.rocketboots
 Version: 3.0.1
 Architecture: iphoneos-arm
 Description: More useful crash logs
-Maintainer: Muirey03
+Maintainer: Muirey03 <tommy.muir@btinternet.com>
 Author: Muirey03
 Section: Tweaks

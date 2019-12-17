@@ -1,7 +1,5 @@
 @class Process;
 @interface CRAProcViewController : UITableViewController <UIGestureRecognizerDelegate>
-{
-    Process* _proc;
-}
+@property (nonatomic, strong) Process* proc;
 -(instancetype)initWithProcess:(Process*)proc;
 @end

@@ -63,6 +63,11 @@ NSString* stringFromDate(NSDate* date, CR4DateFormat type)
 			[formatter setDateStyle:NSDateFormatterShortStyle];
     		[formatter setTimeStyle:NSDateFormatterShortStyle];
 			break;
+        case CR4DateFormatTimeOnly:
+            [formatter setDateStyle:NSDateFormatterNoStyle];
+            [formatter setTimeStyle:NSDateFormatterShortStyle];
+            break;
+        default:
 		case CR4DateFormatFilename:
             needsLowercase = YES;
 			[formatter setDateFormat:@"yyyy-MM-dd_h:mm_a"];
@@ -181,6 +186,33 @@ HBPreferences* sharedPreferences()
         prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
     }
     return prefs;
+}
+
+NSString* addInfoToLog(NSString* logContents, NSDictionary* info)
+{
+    if ([NSJSONSerialization isValidJSONObject:info])
+    {
+        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:info options:0 error:NULL];
+        if (jsonData)
+        {
+            NSString* infoString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            return [logContents stringByAppendingFormat:@"\n\n%@", infoString];
+        }
+    }
+    return logContents;
+}
+
+NSDictionary* getInfoFromLog(NSString* logContents)
+{
+    if (logContents.length)
+    {
+        NSRange lastLineRange = [logContents lineRangeForRange:NSMakeRange(logContents.length - 1, 1)];
+        NSString* jsonString = [logContents substringWithRange:lastLineRange];
+        NSDictionary* info = [NSJSONSerialization JSONObjectWithData:[jsonString dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+        if ([info isKindOfClass:[NSDictionary class]])
+            return info;
+    }
+    return nil;
 }
 
 }

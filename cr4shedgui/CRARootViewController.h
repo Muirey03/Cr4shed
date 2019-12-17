@@ -6,7 +6,7 @@
     NSLayoutConstraint* _widthConstraint;
     NSLayoutConstraint* _heightConstraint;
 }
-@property (nonatomic, retain) Process* proc;
+@property (nonatomic, strong) Process* proc;
 -(void)updateLabels;
 @end
 

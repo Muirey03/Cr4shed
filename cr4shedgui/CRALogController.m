@@ -8,9 +8,7 @@
     if ((self = [self init]))
     {
         _log = log;
-        NSArray<NSString*>* comp = [[_log.path lastPathComponent] componentsSeparatedByString:@"@"];
-        NSString* title = comp.count > 1 ? comp[1] : comp[0];
-        self.title = title;
+        self.title = log.dateName;
     }
     return self;
 }
@@ -29,7 +27,7 @@
 
     webView = [WKWebView new];
     webView.scrollView.bounces = NO;
-    logMessage = [NSString stringWithContentsOfFile:_log.path encoding:NSUTF8StringEncoding error:NULL];
+    logMessage = _log.contents;
 
     NSString* htmlString =  @"<html><head><title>.</title><meta name='viewport' content='initial-scale=1.0,maximum-scale=3.0'/></head><body><pre style=\"font-size:8pt;\">%@</pre></body></html>";
     NSString* formattedStr = [logMessage kv_encodeHTMLCharacterEntities];

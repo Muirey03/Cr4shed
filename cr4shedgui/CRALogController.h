@@ -6,6 +6,6 @@
     WKWebView* webView;
     NSString* logMessage;
 }
-@property (nonatomic, retain) Log* log;
+@property (nonatomic, strong) Log* log;
 -(instancetype)initWithLog:(Log*)log;
 @end

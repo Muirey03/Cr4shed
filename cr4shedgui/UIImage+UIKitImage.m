@@ -24,4 +24,15 @@
     UIGraphicsEndImageContext();
     return newImage;
 }
+
+-(UIImage*)resizeToHeight:(CGFloat)newHeight
+{
+    CGFloat aspectRatio = self.size.width / self.size.height;
+    CGSize newSize = CGSizeMake(newHeight * aspectRatio, newHeight);
+    UIGraphicsBeginImageContextWithOptions(newSize, NO, 0.0);
+    [self drawInRect:CGRectMake(0, 0, newSize.width, newHeight)];
+    UIImage* newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return newImage;
+}
 @end

@@ -8,6 +8,7 @@
 typedef NS_ENUM(NSInteger, CR4DateFormat)
 {
     CR4DateFormatPretty,
+    CR4DateFormatTimeOnly,
     CR4DateFormatFilename
 };
 
@@ -27,6 +28,9 @@ bool processHasBeenHandled(mach_port_t task);
 @class HBPreferences;
 HBPreferences* sharedPreferences(void);
 @class NSString;
+@class NSDictionary;
+NSString* addInfoToLog(NSString* logContents, NSDictionary* info);
+NSDictionary* getInfoFromLog(NSString* logContents);
 #ifdef __cplusplus
 }
 

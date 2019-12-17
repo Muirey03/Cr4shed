@@ -85,7 +85,7 @@ static unsigned long getImageVersion(uint32_t img)
     return 0;
 }
 
-static void createCrashLog(NSString* specialisedInfo)
+static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extraInfo)
 {
     if (isBlacklisted()) return;
 
@@ -111,11 +111,20 @@ static void createCrashLog(NSString* specialisedInfo)
                                                         device,
                                                         specialisedInfo];
 
+    //add image infos:
     uint32_t image_cnt = _dyld_image_count();
     for (unsigned int i = 0; i < image_cnt; i++)
     {
         errorMessage = [errorMessage stringByAppendingFormat:@"%u: %s (Version: %lu)\n", i, _dyld_get_image_name(i), getImageVersion(i)];
     }
+
+    //extra info for the GUI to parse easily:
+    if (!extraInfo) extraInfo = [NSMutableDictionary new];
+    [extraInfo addEntriesFromDictionary:@{
+        @"ProcessName" : processName,
+        @"ProcessBundleID" : processID
+    }];
+    errorMessage = addInfoToLog(errorMessage, [extraInfo copy]);
 
     // Create the dir if it doesn't exist already:
     BOOL isDir;
@@ -180,7 +189,12 @@ void createNSExceptionLog(NSException* e)
     }
 
     [info appendFormat:@"Call stack:\n%@", stackSymbols];
-    createCrashLog([info copy]);
+    
+    NSMutableDictionary* extraInfo = [@{
+        @"Culprit" : culprit,
+        @"NSExceptionReason" : e.reason
+    } mutableCopy];
+    createCrashLog([info copy], extraInfo);
 }
 
 void unhandledExceptionHandler(NSException* e)

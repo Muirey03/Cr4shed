@@ -1,9 +1,9 @@
 @class Log;
 
 @interface Process : NSObject
-@property (nonatomic, retain) NSString* name;
-@property (nonatomic, retain) NSDate* latestDate;
-@property (nonatomic, retain) NSMutableArray<Log*>* logs;
+@property (nonatomic, strong) NSString* name;
+@property (nonatomic, strong) NSDate* latestDate;
+@property (nonatomic, strong) NSMutableArray<Log*>* logs;
 -(instancetype)initWithName:(NSString*)procName;
 -(void)deleteAllLogs;
 -(void)addToBlacklist;

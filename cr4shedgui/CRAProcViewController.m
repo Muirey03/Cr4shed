@@ -1,6 +1,6 @@
 #import "CRAProcViewController.h"
 #import "Process.h"
-#import "CRALogController.h"
+#import "CRALogInfoViewController.h"
 #import "Log.h"
 #import "../sharedutils.h"
 
@@ -92,7 +92,7 @@
 
 -(void)tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath*)indexPath
 {
-    CRALogController* logVC = [[CRALogController alloc] initWithLog:_proc.logs[indexPath.row]];
+    CRALogInfoViewController* logVC = [[CRALogInfoViewController alloc] initWithLog:_proc.logs[indexPath.row]];
 	[self.navigationController pushViewController:logVC animated:YES];
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }

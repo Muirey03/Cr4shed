@@ -248,6 +248,14 @@
 			[logStr appendFormat:@"%llu: %@\n", (unsigned long long)i, images[i][@"ExecutablePath"]];
 		}
 
+		 //extra info for the GUI to parse easily:
+		NSDictionary* extraInfo = @{
+			@"ProcessName" : info->processName,
+			@"ProcessBundleID" : info->bundleID,
+			@"Culprit" : culprit
+		};
+		logStr = [addInfoToLog(logStr, extraInfo) mutableCopy];
+
 		// Create the dir if it doesn't exist already:
 		BOOL isDir;
 		BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/mobile/Library/Cr4shed" isDirectory:&isDir];
