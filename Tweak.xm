@@ -121,8 +121,8 @@ static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extra
     //extra info for the GUI to parse easily:
     if (!extraInfo) extraInfo = [NSMutableDictionary new];
     [extraInfo addEntriesFromDictionary:@{
-        @"ProcessName" : processName,
-        @"ProcessBundleID" : processID
+        @"ProcessName" : processName ?: @"",
+        @"ProcessBundleID" : processID ?: @""
     }];
     errorMessage = addInfoToLog(errorMessage, [extraInfo copy]);
 
@@ -191,8 +191,8 @@ void createNSExceptionLog(NSException* e)
     [info appendFormat:@"Call stack:\n%@", stackSymbols];
     
     NSMutableDictionary* extraInfo = [@{
-        @"Culprit" : culprit,
-        @"NSExceptionReason" : e.reason
+        @"Culprit" : culprit ?: @"Unknown",
+        @"NSExceptionReason" : e.reason ?: @""
     } mutableCopy];
     createCrashLog([info copy], extraInfo);
 }

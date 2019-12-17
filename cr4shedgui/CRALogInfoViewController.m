@@ -54,9 +54,9 @@
 	[self.view addSubview:_tableView];
 
 	[_tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor].active = YES;
-    [_tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;
-    [_tableView.topAnchor constraintEqualToAnchor:self.view.topAnchor].active = YES;
-    [_tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor].active = YES;
+	[_tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;
+	[_tableView.topAnchor constraintEqualToAnchor:self.view.topAnchor].active = YES;
+	[_tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor].active = YES;
 
 	const CGFloat footerHeight = 65.;
 	const CGFloat btnPadding = 10.;

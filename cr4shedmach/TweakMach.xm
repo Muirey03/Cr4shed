@@ -250,9 +250,9 @@
 
 		 //extra info for the GUI to parse easily:
 		NSDictionary* extraInfo = @{
-			@"ProcessName" : info->processName,
-			@"ProcessBundleID" : info->bundleID,
-			@"Culprit" : culprit
+			@"ProcessName" : info->processName ?: @"",
+			@"ProcessBundleID" : info->bundleID ?: @"",
+			@"Culprit" : culprit ?: @"Unknown"
 		};
 		logStr = [addInfoToLog(logStr, extraInfo) mutableCopy];
 
