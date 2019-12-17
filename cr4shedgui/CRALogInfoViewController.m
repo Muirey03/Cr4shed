@@ -36,7 +36,8 @@
 			[_infoFormat addObject:@{
 				@"DisplayName" : @"Reason",
 				@"Value" : reason,
-				@"Copyable" : @YES
+				@"Copyable" : @YES,
+				@"SubtitleStyle" : @YES
 			}];
 		}
 	}
@@ -178,7 +179,7 @@
 		default:
 		{
 			NSDictionary* infoRow = _infoFormat[indexPath.row - 1];
-			style = UITableViewCellStyleValue1;
+			style = [infoRow[@"SubtitleStyle"] boolValue] ? UITableViewCellStyleSubtitle : UITableViewCellStyleValue1;
 			text = infoRow[@"DisplayName"];
 			detail = infoRow[@"Value"];
 			needsIndicator = [infoRow[@"HasAction"] boolValue];
@@ -220,12 +221,18 @@
 			return 75.;
 		default:
 		{
-			NSString* name = _infoFormat[indexPath.row - 1][@"DisplayName"];
+			if (![_infoFormat[indexPath.row - 1][@"SubtitleStyle"] boolValue])
+				return 45.;
+			if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){11, 0, 0}])
+				return UITableViewAutomaticDimension;
+			
+			//UIKit bug on iOS < 11:
+			//UITableViewAutomaticDimension ignores detailTextLabel
+			//so we need to calculate height ourself
 			NSString* text = _infoFormat[indexPath.row - 1][@"Value"];
 			UITableViewCell* cell = [self tableView:tableView cellForRowAtIndexPath:indexPath];
-			CGRect nameRect = [name boundingRectWithSize:CGSizeZero options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : cell.textLabel.font} context:nil];
-			CGRect boundingRect = [text boundingRectWithSize:CGSizeMake(tableView.frame.size.width - nameRect.size.width - 36., 0.) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : cell.detailTextLabel.font} context:nil];
-			return boundingRect.size.height + 25.;
+			CGRect boundingRect = [text boundingRectWithSize:CGSizeMake(tableView.frame.size.width - 30., 0.) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : cell.detailTextLabel.font} context:nil];
+			return boundingRect.size.height + 42.;
 		}
 	}
 }
