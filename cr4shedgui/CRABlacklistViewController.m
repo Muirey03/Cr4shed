@@ -15,8 +15,8 @@
 		[self.contentView addSubview:_textField];
 		[_textField.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:15.].active = YES;
 		[_textField.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor].active = YES;
-		[_textField.topAnchor constraintEqualToAnchor:self.contentView.topAnchor].active = YES;
-		[_textField.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor].active = YES;
+		[_textField.topAnchor constraintEqualToAnchor:self.topAnchor].active = YES;
+		[_textField.bottomAnchor constraintEqualToAnchor:self.bottomAnchor].active = YES;
 	}
 	return self;
 }
@@ -124,13 +124,6 @@
 	[_blacklist removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
 	[self updatePreferences];
-}
-
-#pragma mark - Table View Delegate
-
--(CGFloat)tableView:(UITableView*)tableView heightForRowAtIndexPath:(NSIndexPath*)indexPath
-{
-	return 45.;
 }
 
 -(void)dealloc

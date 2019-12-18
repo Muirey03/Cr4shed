@@ -149,59 +149,45 @@
 
 -(NSInteger)numberOfSectionsInTableView:(UITableView*)tableView
 {
-	return 1;
+	return 2;
 }
 
 -(NSInteger)tableView:(UITableView*)tableView numberOfRowsInSection:(NSInteger)section
 {
-	return _infoFormat.count + 1;
+	return section == 0 ? 1 : _infoFormat.count;
 }
 
 -(UITableViewCell*)tableView:(UITableView*)tableView cellForRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	UITableViewCellStyle style = UITableViewCellStyleDefault;
-	UIImage* img = nil;
-	NSString* text = nil;
-	NSString* detail = nil;
-	BOOL needsIndicator = NO;
-	BOOL canWrapDetail = NO;
-	switch (indexPath.row)
+	UITableViewCell* cell;
+	if (indexPath.section == 0)
 	{
-		case 0:
-		{
-			NSString* bundleID = _info[@"ProcessBundleID"];
-			style = UITableViewCellStyleSubtitle;
-			text = _log.processName;
-			detail = bundleID;
-			img = [[UIImage _applicationIconImageForBundleIdentifier:bundleID format:2 scale:3.] resizeToHeight:60.];
-			break;
-		}
-		default:
-		{
-			NSDictionary* infoRow = _infoFormat[indexPath.row - 1];
-			style = [infoRow[@"SubtitleStyle"] boolValue] ? UITableViewCellStyleSubtitle : UITableViewCellStyleValue1;
-			text = infoRow[@"DisplayName"];
-			detail = infoRow[@"Value"];
-			needsIndicator = [infoRow[@"HasAction"] boolValue];
-			canWrapDetail = YES;
-			break;
-		}
-	}
+		cell = [tableView dequeueReusableCellWithIdentifier:@"LogInfoHeaderCell"];
+		if (!cell)
+			cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"LogInfoHeaderCell"];
 
-	UITableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:@"LogInfoCell"];
-	if (!cell)
-		cell = [[UITableViewCell alloc] initWithStyle:style reuseIdentifier:@"LogInfoCell"];
-	cell.textLabel.text = text;
-	cell.detailTextLabel.text = detail;
-	if (canWrapDetail)
+		NSString* bundleID = _info[@"ProcessBundleID"];
+		cell.textLabel.text = _log.processName;
+		cell.detailTextLabel.text = bundleID;
+		cell.imageView.image = [[UIImage _applicationIconImageForBundleIdentifier:bundleID format:2 scale:3.] resizeToHeight:60.];
+	}
+	else
 	{
+		NSDictionary* infoRow = _infoFormat[indexPath.row];
+		UITableViewCellStyle style = [infoRow[@"SubtitleStyle"] boolValue] ? UITableViewCellStyleSubtitle : UITableViewCellStyleValue1;
+		NSString* identifier = [infoRow[@"SubtitleStyle"] boolValue] ? @"LogInfoSubtitleCell" : @"LogInfoCell";
+		cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+		if (!cell)
+			cell = [[UITableViewCell alloc] initWithStyle:style reuseIdentifier:identifier];
+		
+		cell.textLabel.text = infoRow[@"DisplayName"];
+		cell.detailTextLabel.text = infoRow[@"Value"];
+		if ([infoRow[@"HasAction"] boolValue])
+			cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 		cell.detailTextLabel.lineBreakMode = NSLineBreakByWordWrapping;
 		cell.detailTextLabel.numberOfLines = 0;
+		cell.clipsToBounds = YES;
 	}
-	cell.clipsToBounds = YES;
-	cell.imageView.image = img;
-	if (needsIndicator)
-		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	return cell;
 }
 
@@ -215,40 +201,35 @@
 
 -(CGFloat)tableView:(UITableView*)tableView heightForRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	switch (indexPath.row)
-	{
-		case 0:
-			return 75.;
-		default:
-		{
-			if (![_infoFormat[indexPath.row - 1][@"SubtitleStyle"] boolValue])
-				return 45.;
-			if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){11, 0, 0}])
-				return UITableViewAutomaticDimension;
-			
-			//UIKit bug on iOS < 11:
-			//UITableViewAutomaticDimension ignores detailTextLabel
-			//so we need to calculate height ourself
-			NSString* text = _infoFormat[indexPath.row - 1][@"Value"];
-			UITableViewCell* cell = [self tableView:tableView cellForRowAtIndexPath:indexPath];
-			CGRect boundingRect = [text boundingRectWithSize:CGSizeMake(tableView.frame.size.width - 30., 0.) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : cell.detailTextLabel.font} context:nil];
-			return boundingRect.size.height + 42.;
-		}
-	}
+	//hardcode header height
+	if (indexPath.section == 0)
+		return 75.;
+
+	//normal cells and iOS 11 work with automagic
+	if (![_infoFormat[indexPath.row][@"SubtitleStyle"] boolValue] || [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){11, 0, 0}])
+		return UITableViewAutomaticDimension;
+
+	//UIKit bug on iOS < 11:
+	//UITableViewAutomaticDimension ignores detailTextLabel
+	//so we need to calculate height ourself
+	NSString* text = _infoFormat[indexPath.row][@"Value"];
+	UITableViewCell* cell = [self tableView:tableView cellForRowAtIndexPath:indexPath];
+	CGRect boundingRect = [text boundingRectWithSize:CGSizeMake(tableView.frame.size.width - 30., 0.) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : cell.detailTextLabel.font} context:nil];
+	return boundingRect.size.height + 42.;
 }
 
 -(NSIndexPath*)tableView:(UITableView*)tableView willSelectRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	if (indexPath.row > 0 && [_infoFormat[indexPath.row - 1][@"HasAction"] boolValue])
+	if (indexPath.section == 1 && [_infoFormat[indexPath.row][@"HasAction"] boolValue])
 		return indexPath;
 	return nil;
 }
 
 -(BOOL)tableView:(UITableView*)tableView shouldHighlightRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	if (indexPath.row)
+	if (indexPath.section == 1)
 	{
-		NSDictionary* info = _infoFormat[indexPath.row - 1];
+		NSDictionary* info = _infoFormat[indexPath.row];
 		return [info[@"Copyable"] boolValue] || [info[@"HasAction"] boolValue];
 	}
     return NO;
@@ -256,9 +237,9 @@
 
 -(BOOL)tableView:(UITableView*)tableView shouldShowMenuForRowAtIndexPath:(NSIndexPath*)indexPath
 {
-	if (indexPath.row)
+	if (indexPath.section == 1)
 	{
-		NSDictionary* info = _infoFormat[indexPath.row - 1];
+		NSDictionary* info = _infoFormat[indexPath.row];
 		return [info[@"Copyable"] boolValue];
 	}
     return NO;
@@ -271,9 +252,9 @@
 
 -(void)tableView:(UITableView*)tableView performAction:(SEL)action forRowAtIndexPath:(NSIndexPath*)indexPath withSender:(id)sender
 {
-    if (sel_isEqual(action, @selector(copy:)))
+    if (indexPath.section == 1 && sel_isEqual(action, @selector(copy:)))
 	{
-        NSDictionary* info = _infoFormat[indexPath.row - 1];
+        NSDictionary* info = _infoFormat[indexPath.row];
         UIPasteboard* pasteBoard = [UIPasteboard generalPasteboard];
         [pasteBoard setString:info[@"Value"]];
     }
