@@ -4,11 +4,26 @@
 #import "Cephei/HBPreferences.h"
 #import "CRABlacklistViewController.h"
 
+void openURL(NSString* urlStr)
+{
+	NSURL* url = [NSURL URLWithString:urlStr];
+	UIApplication* app = [UIApplication sharedApplication];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+	if ([app respondsToSelector:@selector(openURL:options:completionHandler:)])
+		[app openURL:url options:@{} completionHandler:nil];
+	else
+		[app openURL:url];
+#pragma clang diagnostic pop
+}
+
 @implementation CRASettingsViewController
 +(instancetype)newSettingsController
 {
 	__block CRASettingsViewController* settingsVC = nil;
-	FRPSection* section1 = [FRPSection sectionWithTitle:@"General" footer:@""];
+
+	//main section:
+	FRPSection* mainSection = [FRPSection sectionWithTitle:@"General" footer:@""];
 	FRPSegmentCell* segmentCell = [FRPSegmentCell   cellWithTitle:@"Process sorting method"
                                                 	setting:[FRPSettings settingsWithKey:kSortingMethod defaultValue:@"Date"]
                                                     values:@[@"Date", @"Name"]
@@ -17,11 +32,21 @@
                                                 	changeBlock:^(NSString* value) {
 														[settingsVC updatePrefsWithKey:kSortingMethod value:value];
 													}];
-	[section1 addCell:segmentCell];
-	[section1 addCell:[FRPLinkCell cellWithTitle:@"Process blacklist" selectedBlock:^(id sender) {
+	[mainSection addCell:segmentCell];
+	[mainSection addCell:[FRPLinkCell cellWithTitle:@"Process blacklist" selectedBlock:^(id sender) {
 		[settingsVC.navigationController pushViewController:[CRABlacklistViewController new] animated:YES];
 	}]];
-	settingsVC = [CRASettingsViewController tableWithSections:@[section1] title:@"Settings" tintColor:nil];
+
+	//credits section
+	FRPSection* creditsSection = [FRPSection sectionWithTitle:@"Credits" footer:@""];
+	[creditsSection addCell:[FRPLinkCell cellWithTitle:@"Follow @Muirey03 on Twitter" selectedBlock:^(id sender) {
+		openURL(@"https://twitter.com/Muirey03");
+	}]];
+	[creditsSection addCell:[FRPLinkCell cellWithTitle:@"Donate to help development" selectedBlock:^(id sender) {
+		openURL(@"https://paypal.me/Muirey03Dev");
+	}]];
+
+	settingsVC = [CRASettingsViewController tableWithSections:@[mainSection, creditsSection] title:@"Settings" tintColor:nil];
 	return settingsVC;
 }
 

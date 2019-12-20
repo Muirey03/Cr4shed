@@ -254,7 +254,7 @@ inline BOOL isBlacklisted(NSString* procName)
     ];
     for (NSString* bannedProc in blacklisted)
     {
-        if ([procName isEqualToString:bannedProc])
+        if (procName && bannedProc && [procName isEqualToString:bannedProc])
             return YES;
     }
     return NO;
