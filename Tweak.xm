@@ -234,8 +234,11 @@ void unhandledExceptionHandler(NSException* e)
 }
 %end
 
-inline BOOL isBlacklisted(NSString* procName)
+inline BOOL isHardBlacklisted(NSString* procName)
 {
+    if (!procName)
+        return YES;
+    
     NSArray<NSString*>* blacklisted = @[
         @"ProtectedCloudKeySyncing",
         @"gssc",
@@ -259,7 +262,7 @@ inline BOOL isBlacklisted(NSString* procName)
     ];
     for (NSString* bannedProc in blacklisted)
     {
-        if (procName && bannedProc && [procName isEqualToString:bannedProc])
+        if (bannedProc && [procName isEqualToString:bannedProc])
             return YES;
     }
     return NO;
@@ -270,7 +273,7 @@ inline BOOL isBlacklisted(NSString* procName)
     if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"])
         dlopen("/Library/MobileSubstrate/DynamicLibraries/__Cr4shedSB.dylib", RTLD_NOW);
 
-    if (!isBlacklisted([[NSProcessInfo processInfo] processName]))
+    if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
     {
         oldHandler = NSGetUncaughtExceptionHandler();
         NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
