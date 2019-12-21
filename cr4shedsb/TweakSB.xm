@@ -1,18 +1,22 @@
 #include "../AppSupport/CPDistributedMessagingCenter.h"
 #import "../rocketbootstrap/rocketbootstrap.h"
 #import "../libnotifications.h"
+#import "../sharedutils.h"
 #include <pthread.h>
+#include <time.h>
 
 @interface Cr4shedServer : NSObject
 @end
 
 @implementation Cr4shedServer
 
-+ (void)load {
++(void)load
+{
 	[self sharedInstance];
 }
 
-+ (id)sharedInstance {
++(id)sharedInstance
+{
 	static dispatch_once_t once = 0;
 	__strong static id sharedInstance = nil;
 	dispatch_once(&once, ^{
@@ -21,18 +25,20 @@
 	return sharedInstance;
 }
 
-- (id)init {
-	if ((self = [super init])) {
+-(id)init
+{
+	if ((self = [super init]))
+    {
         CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
         rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
         [messagingCenter runServerOnCurrentThread];
 
 		[messagingCenter registerForMessageName:@"writeString" target:self selector:@selector(writeString:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"createDir" target:self selector:@selector(createDir:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"sendNotification" target:self selector:@selector(sendNotification:withUserInfo:)];
-	}
-
-	return self;
+	    [messagingCenter registerForMessageName:@"sendNotification" target:self selector:@selector(sendNotification:withUserInfo:)];
+        [messagingCenter registerForMessageName:@"stringFromTime" target:self selector:@selector(stringFromTime:withUserInfo:)];
+    }
+    return self;
 }
 
 -(NSDictionary*)writeString:(NSString*)name withUserInfo:(NSDictionary*)userInfo
@@ -79,6 +85,15 @@
                                 repeats:NO
                                 bundleId:bundleID];
     return nil;
+}
+
+-(NSDictionary*)stringFromTime:(NSString*)name withUserInfo:(NSDictionary*)userInfo
+{
+    time_t t = (time_t)[userInfo[@"time"] integerValue];
+    CR4DateFormat type = (CR4DateFormat)[userInfo[@"type"] integerValue];
+    NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
+    NSString* ret = stringFromDate(date, type);
+    return ret ? @{@"ret" : ret} : @{};
 }
 @end
 

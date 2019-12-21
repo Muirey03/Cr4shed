@@ -1,4 +1,5 @@
 #include <vector>
+#include <time.h>
 
 struct exception_info
 {
@@ -21,7 +22,7 @@ struct exception_info
 @interface CrashReport : NSObject
 @property (nonatomic, retain) NSString* procName;
 //%new properties
-@property (nonatomic, retain) NSDate* crashDate;
+@property (nonatomic, assign) time_t crashTime;
 @property (nonatomic, assign) uint64_t __far;
 @property (nonatomic, assign) struct exception_info* exceptionInfo;
 @property (nonatomic, assign) mach_port_t realThread;

@@ -11,7 +11,7 @@
 #import "../libnotifications.h"
 
 %hook CrashReport
-%property (nonatomic, retain) NSDate* crashDate;
+%property (nonatomic, assign) time_t crashTime;
 %property (nonatomic, assign) uint64_t __far;
 %property (nonatomic, assign) struct exception_info* exceptionInfo;
 %property (nonatomic, assign) mach_port_t realThread;
@@ -33,7 +33,7 @@
 	UNIX signal.
 	*/
 
-	NSDate* crashDate = [NSDate date];
+	time_t crashTime = time(NULL);
 	mach_port_t realThread = MACH_PORT_NULL;
 	uint64_t far = 0;
 	thread_act_port_array_t threads;
@@ -55,7 +55,7 @@
 
 	if ((self = %orig))
 	{
-		self.crashDate = crashDate;
+		self.crashTime = crashTime;
 		self.__far = far;
 		if (realThread == MACH_PORT_NULL)
 			realThread = thread;
@@ -180,8 +180,8 @@
 		struct exception_info* info = self.exceptionInfo;
 		NSArray* images = MSHookIvar<NSArray*>(self, "_binaryImages");
 
-		NSDate* date = self.crashDate;
-		NSString* dateString = stringFromDate(date, CR4DateFormatPretty);
+		time_t crashTime = self.crashTime;
+		NSString* dateString = stringFromTime(crashTime, CR4DateFormatPretty);
 		NSString* device = [NSString stringWithFormat:@"%@, iOS %@", deviceName(), deviceVersion()];
 
 		NSMutableString* logStr = [NSMutableString stringWithFormat:@"Date: %@\n"
@@ -264,7 +264,7 @@
 		if (!dirExists) return; //should never happen, but just in case
 
 		// Get the date to use for the filename:
-		NSString* filenameDateStr = stringFromDate(date, CR4DateFormatFilename);
+		NSString* filenameDateStr = stringFromTime(crashTime, CR4DateFormatFilename);
 
 		// Get the path for the new crash log:
 		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@.log", info->processName, filenameDateStr];

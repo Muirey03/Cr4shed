@@ -1,5 +1,6 @@
 #include <mach/mach.h>
 #include <vector>
+#import "../sharedutils.h"
 
 typedef struct
 {
@@ -29,3 +30,4 @@ exception_type_t mach_exception_type(int sig, mach_exception_data_type_t* except
 void freeThreadArray(thread_act_port_array_t threads, mach_msg_type_number_t thread_count);
 BOOL createDir(NSString* path);
 void writeStringToFile(NSString* str, NSString* path);
+NSString* stringFromTime(time_t time, CR4DateFormat type);
