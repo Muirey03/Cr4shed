@@ -151,7 +151,6 @@ static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extra
 
 /* add the exception handler: */
 static NSUncaughtExceptionHandler* oldHandler;
-static BOOL hasCrashed = NO;
 
 void createNSExceptionLog(NSException* e)
 {
@@ -199,6 +198,7 @@ void createNSExceptionLog(NSException* e)
 
 void unhandledExceptionHandler(NSException* e)
 {
+    static BOOL hasCrashed = NO;
     if (hasCrashed)
         abort();
     else
@@ -226,6 +226,11 @@ void unhandledExceptionHandler(NSException* e)
         return;
     }
     %orig;
+}
+
+%hookf (NSUncaughtExceptionHandler*, NSGetUncaughtExceptionHandler)
+{
+    return oldHandler;
 }
 %end
 
@@ -267,7 +272,8 @@ inline BOOL isBlacklisted(NSString* procName)
 
     if (!isBlacklisted([[NSProcessInfo processInfo] processName]))
     {
-        %init(Tweak);
+        oldHandler = NSGetUncaughtExceptionHandler();
         NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
+        %init(Tweak);
     }
 }

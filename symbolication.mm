@@ -11,12 +11,15 @@ inline CSArchitecture getArch(const char* path)
     CSArchitecture arch;
     uint32_t count = _dyld_image_count();
     const struct mach_header* header = NULL;
-    for (int i = 0; i < count; i++)
+    if (path)
     {
-        if (strcmp(_dyld_get_image_name(i), path) == 0)
+        for (int i = 0; i < count; i++)
         {
-            header = _dyld_get_image_header(i);
-            break;
+            if (strcmp(_dyld_get_image_name(i), path) == 0)
+            {
+                header = _dyld_get_image_header(i);
+                break;
+            }
         }
     }
     if (header)
@@ -33,6 +36,9 @@ inline CSArchitecture getArch(const char* path)
 
 static NSString* executableUUID(const char* path)
 {
+    if (!path)
+        return nil;
+
     const struct mach_header *executableHeader = NULL;
     for (int i = 0; i < _dyld_image_count(); i++)
     {
@@ -94,17 +100,20 @@ static CSSymbolicatorRef symbolicator(const char* path, CSArchitecture* archp = 
 
 static CSSymbolOwnerRef ownerForPath(const char* path)
 {
-    NSString* uuidStr = executableUUID(path);
-    CSSymbolicatorRef sym = symbolicator(path);
-    if (!CSIsNull(sym))
+    if (path)
     {
-        CFUUIDRef uuid = CFUUIDCreateFromUnformattedCString([uuidStr UTF8String]);
-        if (uuid)
+        NSString* uuidStr = executableUUID(path);
+        CSSymbolicatorRef sym = symbolicator(path);
+        if (!CSIsNull(sym))
         {
-            CSSymbolOwnerRef owner = CSSymbolicatorGetSymbolOwnerWithUUIDAtTime(sym, uuid, kCSNow);
-            CFRelease(uuid);
-            if (!CSIsNull(owner))
-                return owner;
+            CFUUIDRef uuid = CFUUIDCreateFromUnformattedCString([uuidStr UTF8String]);
+            if (uuid)
+            {
+                CSSymbolOwnerRef owner = CSSymbolicatorGetSymbolOwnerWithUUIDAtTime(sym, uuid, kCSNow);
+                CFRelease(uuid);
+                if (!CSIsNull(owner))
+                    return owner;
+            }
         }
     }
     return kCSNull;
@@ -159,17 +168,20 @@ NSString* nameForSymbol(NSNumber* addrNum, uint64_t* outOffset)
     {
         void* symAddr = info.dli_saddr;
         const char* path = info.dli_fname;
-        CSSymbolOwnerRef owner = ownerForPath(path);
-        if (!CSIsNull(owner))
+        if (path)
         {
-            uint64_t base = CSSymbolOwnerGetBaseAddress(owner);
-            uint64_t imgAddr = (uint64_t)info.dli_fbase;
-            uint64_t symOffset = (uint64_t)symAddr + base - imgAddr;
-            if (outOffset) *outOffset = (uint64_t)addrPtr - imgAddr;
-            CSSymbolRef symbol = CSSymbolOwnerGetSymbolWithAddress(owner, symOffset);
-            if (!CSIsNull(symbol))
+            CSSymbolOwnerRef owner = ownerForPath(path);
+            if (!CSIsNull(owner))
             {
-                return [NSString stringWithUTF8String:CSSymbolGetName(symbol)];
+                uint64_t base = CSSymbolOwnerGetBaseAddress(owner);
+                uint64_t imgAddr = (uint64_t)info.dli_fbase;
+                uint64_t symOffset = (uint64_t)symAddr + base - imgAddr;
+                if (outOffset) *outOffset = (uint64_t)addrPtr - imgAddr;
+                CSSymbolRef symbol = CSSymbolOwnerGetSymbolWithAddress(owner, symOffset);
+                if (!CSIsNull(symbol))
+                {
+                    return [NSString stringWithUTF8String:CSSymbolGetName(symbol)];
+                }
             }
         }
     }
