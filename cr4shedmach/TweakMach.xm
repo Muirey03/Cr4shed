@@ -11,8 +11,6 @@
 #import "../sharedutils.h"
 #import "../libnotifications.h"
 
-#include <RemoteLog.h>
-
 %hook CrashReport
 %property (nonatomic, assign) time_t crashTime;
 %property (nonatomic, assign) uint64_t __far;
