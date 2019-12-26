@@ -28,6 +28,7 @@ struct exception_info
 @property (nonatomic, assign) mach_port_t realThread;
 @property (nonatomic, assign) int realCrashedNumber;
 -(BOOL)isExceptionNonFatal;
+-(BOOL)cr4_isExceptionNonFatal;
 -(NSString*)signalName;
 -(NSArray*)binaryImages;
 -(void)decodeBacktraceWithBlock:(void(^)(NSInteger, id))arg1;

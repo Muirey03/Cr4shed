@@ -215,7 +215,10 @@ NSArray* symbolicatedStackSymbols(NSArray* callStackSymbols, NSArray* callStackR
 
 NSArray* symbolicatedCallStack(NSException* e)
 {
-    NSArray* symArr = e.callStackSymbols;
-    NSArray* addresses = e.callStackReturnAddresses;
-    return symbolicatedStackSymbols(symArr, addresses);
+    @autoreleasepool
+    {
+        NSArray* symArr = e.callStackSymbols;
+        NSArray* addresses = e.callStackReturnAddresses;
+        return symbolicatedStackSymbols(symArr, addresses);
+    }
 }

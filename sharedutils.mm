@@ -180,9 +180,7 @@ HBPreferences* sharedPreferences()
     if (!prefs)
     {
         NSString* const frameworkPath = @"/usr/lib/Cephei.framework";
-        NSBundle* bundle = [NSBundle bundleWithPath:frameworkPath];
-        if (!bundle.loaded)
-            [bundle load];
+        lazyLoadBundle(frameworkPath);
         prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
     }
     return prefs;
@@ -223,4 +221,11 @@ bool isBlacklisted(NSString* procName)
     HBPreferences* prefs = sharedPreferences();
 	NSArray<NSString*>* blacklist = [prefs objectForKey:kProcessBlacklist];
 	return (blacklist && [blacklist containsObject:procName]);
+}
+
+void lazyLoadBundle(NSString* const bundlePath)
+{
+    NSBundle* bundle = [NSBundle bundleWithPath:bundlePath];
+    if (!bundle.loaded)
+        [bundle load];
 }

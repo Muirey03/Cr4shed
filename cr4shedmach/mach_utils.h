@@ -1,5 +1,6 @@
 #include <mach/mach.h>
 #include <vector>
+#import <objc/runtime.h>
 #import "../sharedutils.h"
 
 typedef struct
@@ -31,3 +32,17 @@ void freeThreadArray(thread_act_port_array_t threads, mach_msg_type_number_t thr
 BOOL createDir(NSString* path);
 void writeStringToFile(NSString* str, NSString* path);
 NSString* stringFromTime(time_t time, CR4DateFormat type);
+template <typename Type>
+static inline Type CR4GetIvar(id self, const char* name)
+{
+    Ivar ivar = class_getInstanceVariable(object_getClass(self), name);
+	if (ivar == NULL)
+		@throw [NSException exceptionWithName:@"IvarNotFoundException" reason:[NSString stringWithFormat:@"Unable to find Ivar with name: \"%s\". THIS IS A BUG IN CR4SHED. Please send this report to @Muirey03 on Twitter.", name] userInfo:nil];
+
+#if __has_feature(objc_arc)
+    void* pointer = ivar == NULL ? NULL : reinterpret_cast<char*>((__bridge void*)self) + ivar_getOffset(ivar);
+#else
+    void* pointer = ivar == NULL ? NULL : reinterpret_cast<char*>(self) + ivar_getOffset(ivar);
+#endif
+    return *reinterpret_cast<Type*>(pointer);
+}

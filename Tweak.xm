@@ -8,6 +8,7 @@
 #import <mach/mach.h>
 
 #define isSB [[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"]
+#define LOAD_APPSUPPORT() lazyLoadBundle(@"/System/Library/PrivateFrameworks/AppSupport.framework")
 
 static void writeStringToFile(NSString* str, NSString* path)
 {
@@ -17,7 +18,8 @@ static void writeStringToFile(NSString* str, NSString* path)
     }
     else
     {
-        CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
+        LOAD_APPSUPPORT();
+        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.Cr4shedServer"];
         rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
         [messagingCenter sendMessageName:@"writeString" userInfo:@{@"string" : str, @"path" : path}];
     }
@@ -29,7 +31,8 @@ static BOOL createDir(NSString* path)
     {
         return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:nil error:nil];
     }
-    CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
+    LOAD_APPSUPPORT();
+    CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.Cr4shedServer"];
     rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
     NSDictionary* reply = [messagingCenter sendMessageAndReceiveReplyName:@"createDir" userInfo:@{@"path" : path}];
     return [reply[@"success"] boolValue];
@@ -55,7 +58,8 @@ void sendNotification(NSString* content, NSDictionary* userInfo)
     }
     else
     {
-        CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
+        LOAD_APPSUPPORT();
+        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.Cr4shedServer"];
         rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
         [messagingCenter sendMessageName:@"sendNotification" userInfo:@{@"content" : content, @"userInfo" : userInfo}];
     }
@@ -150,7 +154,7 @@ static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extra
 }
 
 /* add the exception handler: */
-static NSUncaughtExceptionHandler* oldHandler;
+static NSUncaughtExceptionHandler* oldHandler = NULL;
 
 void createNSExceptionLog(NSException* e)
 {
@@ -198,39 +202,46 @@ void createNSExceptionLog(NSException* e)
 
 void unhandledExceptionHandler(NSException* e)
 {
-    static BOOL hasCrashed = NO;
-    if (hasCrashed)
-        abort();
-    else
-        hasCrashed = YES;
-    @try
+    @autoreleasepool
     {
-        createNSExceptionLog(e);
-        if (oldHandler)
+        static BOOL hasCrashed = NO;
+        if (hasCrashed)
+            exit(EXIT_FAILURE);
+        else
+            hasCrashed = YES;
+        @try
         {
-            oldHandler(e);
+            createNSExceptionLog(e);
         }
-    }
-    @catch (NSException* e)
-    {
-        abort();
+        @catch (NSException* e)
+        {
+            exit(EXIT_FAILURE);
+        }
+        if (oldHandler)
+            oldHandler(e);
     }
 }
 
 %group Tweak
 %hookf (void, NSSetUncaughtExceptionHandler, NSUncaughtExceptionHandler* handler)
 {
-    if (handler != &unhandledExceptionHandler)
+    @autoreleasepool
     {
-        oldHandler = handler;
-        return;
+        if (handler != &unhandledExceptionHandler)
+        {
+            oldHandler = handler;
+            return;
+        }
+        %orig;
     }
-    %orig;
 }
 
 %hookf (NSUncaughtExceptionHandler*, NSGetUncaughtExceptionHandler)
 {
-    return oldHandler;
+    @autoreleasepool
+    {
+        return oldHandler;
+    }
 }
 %end
 
@@ -258,7 +269,8 @@ inline BOOL isHardBlacklisted(NSString* procName)
         @"misd",
         @"dasd",
         @"passd",
-        @"CircleJoinRequested"
+        @"CircleJoinRequested",
+        @"suggestd"
     ];
     for (NSString* bannedProc in blacklisted)
     {
@@ -270,13 +282,16 @@ inline BOOL isHardBlacklisted(NSString* procName)
 
 %ctor
 {
-    if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"])
-        dlopen("/Library/MobileSubstrate/DynamicLibraries/__Cr4shedSB.dylib", RTLD_NOW);
-
-    if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
+    @autoreleasepool
     {
-        oldHandler = NSGetUncaughtExceptionHandler();
-        NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
-        %init(Tweak);
+        if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"])
+            dlopen("/Library/MobileSubstrate/DynamicLibraries/__Cr4shedSB.dylib", RTLD_NOW);
+
+        if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
+        {
+            oldHandler = NSGetUncaughtExceptionHandler();
+            NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);
+            %init(Tweak);
+        }
     }
 }

@@ -5,6 +5,7 @@
 #import "../sharedutils.h"
 #import "UIImage+UIKitImage.h"
 #import "Cephei/HBPreferences.h"
+#include <objc/runtime.h>
 
 @implementation ProcessCell
 -(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString*)reuseIdentifier
@@ -227,14 +228,16 @@
 
 -(UISwipeActionsConfiguration*)tableView:(UITableView*)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath*)indexPath
 {
+	Class $UIContextualAction = objc_getClass("UIContextualAction");
+	Class $UISwipeActionsConfiguration = objc_getClass("UISwipeActionsConfiguration");
 	Process* proc = _procs[indexPath.row];
-	UIContextualAction* deleteAction = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive title:@"Delete" handler:^(UIContextualAction* action, UIView* sourceView, void (^completionHandler)(BOOL)){
+	UIContextualAction* deleteAction = [$UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive title:@"Delete" handler:^(UIContextualAction* action, UIView* sourceView, void (^completionHandler)(BOOL)){
 		[self deleteProcessAtIndexPath:indexPath];
 		completionHandler(YES);
 	}];
 	BOOL isBlacklisted = [proc isBlacklisted];
 	NSString* blacklistTitle = isBlacklisted ? @"Un-blacklist" : @"Blacklist";
-	UIContextualAction* blacklistAction = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal title:blacklistTitle handler:^(UIContextualAction* action, UIView* sourceView, void (^completionHandler)(BOOL)){
+	UIContextualAction* blacklistAction = [$UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal title:blacklistTitle handler:^(UIContextualAction* action, UIView* sourceView, void (^completionHandler)(BOOL)){
 		if (isBlacklisted)
 			[proc removeFromBlacklist];
 		else
@@ -244,7 +247,7 @@
 	}];
 	blacklistAction.backgroundColor = [UIColor systemBlueColor];
 	NSArray<UIContextualAction*>* actions = @[deleteAction, blacklistAction];
-	UISwipeActionsConfiguration* config = [UISwipeActionsConfiguration configurationWithActions:actions];
+	UISwipeActionsConfiguration* config = [$UISwipeActionsConfiguration configurationWithActions:actions];
 	return config;
 }
 

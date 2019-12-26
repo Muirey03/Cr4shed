@@ -35,4 +35,5 @@ NSDictionary* getInfoFromLog(NSString* logContents);
 }
 
 bool isBlacklisted(NSString* procName = nil);
+void lazyLoadBundle(NSString* const bundlePath);
 #endif

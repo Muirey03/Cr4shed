@@ -1,6 +1,7 @@
 @import Foundation;
 
 #include <stdlib.h>
+#include <signal.h>
 #include <uuid/uuid.h>
 #include <mach/mach.h>
 #import <substrate.h>
@@ -9,6 +10,8 @@
 #import "../symbolication.h"
 #import "../sharedutils.h"
 #import "../libnotifications.h"
+
+#include <RemoteLog.h>
 
 %hook CrashReport
 %property (nonatomic, assign) time_t crashTime;
@@ -66,22 +69,34 @@
 	return self;
 }
 
+%new
+-(BOOL)cr4_isExceptionNonFatal
+{
+	if ([self respondsToSelector:@selector(isExceptionNonFatal)])
+		return [self isExceptionNonFatal];
+	return (!CR4GetIvar<void*>(self, "_exit_snapshot") && CR4GetIvar<mach_exception_data_t>(self, "_exceptionCode")[0] >> 58 != 10);
+}
+
 //responsible for gathering the exception info
 -(void)loadBundleInfo
 {
 	%orig;
 
 	//more work to fix ReportCrash's bug:
-	exception_type_t& exception = MSHookIvar<exception_type_t>(self, "_exceptionType");
-	mach_exception_data_t exception_codes = MSHookIvar<mach_exception_data_t>(self, "_exceptionCode");
-	mach_msg_type_number_t codeCnt = MSHookIvar<mach_msg_type_number_t>(self, "_exceptionCodeCount");
-	mach_port_t task = MSHookIvar<mach_port_t>(self, "_task");
-	mach_port_t thread = MSHookIvar<mach_port_t>(self, "_threadPort");
-	int threadNum = MSHookIvar<int>(self, "_crashedThreadNumber");
-	int sig = MSHookIvar<int>(self, "_signal");
+	exception_type_t exception = CR4GetIvar<exception_type_t>(self, "_exceptionType");
+	mach_exception_data_t old_exception_codes = CR4GetIvar<mach_exception_data_t>(self, "_exceptionCode");
+	mach_exception_data_t exception_codes = (mach_exception_data_t)calloc(2, sizeof(mach_exception_data_type_t));
+	if (!exception_codes) return;
+	mach_msg_type_number_t codeCnt = CR4GetIvar<mach_msg_type_number_t>(self, "_exceptionCodeCount");
+	if (old_exception_codes)
+		memcpy(exception_codes, old_exception_codes, codeCnt * sizeof(mach_exception_data_type_t));
+	mach_port_t task = CR4GetIvar<mach_port_t>(self, "_task");
+	mach_port_t thread = CR4GetIvar<mach_port_t>(self, "_threadPort");
+	int threadNum = CR4GetIvar<int>(self, "_crashedThreadNumber");
+	int sig = CR4GetIvar<int>(self, "_signal");
 	
 	//don't create report if cr4shed already generated an NSException report
-	if (processHasBeenHandled(task))
+	if (processHasBeenHandled(task) || sig == 0 || sig == SIGKILL || isBlacklisted(self.procName))
 		return;
 	
 	mach_exception_data_type_t subtype = 0;
@@ -89,9 +104,7 @@
 	exception_codes[0] = subtype;
 	if (exception == EXC_CORPSE_NOTIFY)
 	{
-		if (MSHookIvar<NSInteger>(self, "_exceptionCodeCount") > 1)
-			exception_codes[1] = (mach_exception_data_type_t)self.__far;
-			
+		exception_codes[1] = (mach_exception_data_type_t)self.__far;
 		if (exception == EXC_BAD_ACCESS)
 		{
 			thread = self.realThread;
@@ -99,19 +112,19 @@
 		}
 	}
 
-	if (![self isExceptionNonFatal] && sig != 0 && !isBlacklisted(self.procName))
+	if (![self cr4_isExceptionNonFatal])
 	{
 		struct exception_info* info = (struct exception_info*)malloc(sizeof(struct exception_info));
 		memset((void*)info, 0, sizeof(struct exception_info));
 
 		//get basic info from crash:
 		info->processName = self.procName;
-		info->bundleID = MSHookIvar<NSString*>(self, "_bundle_id");
+		info->bundleID = CR4GetIvar<NSString*>(self, "_bundle_id");
 		info->exception_type = mach_exception_string(exception, [self signalName]);
 		info->exception_subtype = mach_code_string(exception, exception_codes, codeCnt);
 		info->exception_codes = mach_exception_codes_string(exception_codes, codeCnt);
 		info->vm_info = mach_exception_vm_info(task, exception, exception_codes, codeCnt);
-		NSArray* threadNames = MSHookIvar<NSMutableArray*>(self, "_threadNames");
+		NSArray* threadNames = CR4GetIvar<NSMutableArray*>(self, "_threadNames");
 		info->thread_num = threadNum;
 		info->thread_name = threadNames.count > threadNum ? threadNames[threadNum] : nil;
 		info->register_info = get_register_info(thread);
@@ -125,7 +138,7 @@
 		}];
 
 		//symbolicate backtrace:
-		NSArray* backtraces = MSHookIvar<NSArray*>(self, "_backtraces");
+		NSArray* backtraces = CR4GetIvar<NSArray*>(self, "_backtraces");
 		NSArray* returnAddresses = backtraces.count > threadNum ? backtraces[threadNum] : nil;
 		if (callStackSymbols && returnAddresses)
 		{
@@ -168,6 +181,8 @@
 
 		info->stackSymbols = [callStackSymbols copy];
 		self.exceptionInfo = info;
+		if (exception_codes)
+			free((void*)exception_codes);
 	}
 }
 
@@ -178,7 +193,8 @@
 	if (self.exceptionInfo)
 	{
 		struct exception_info* info = self.exceptionInfo;
-		NSArray* images = MSHookIvar<NSArray*>(self, "_binaryImages");
+		NSArray* images = CR4GetIvar<NSArray*>(self, "_binaryImages");
+		NSString* terminationReason = CR4GetIvar<NSString*>(self, "_terminator_reason");
 
 		time_t crashTime = self.crashTime;
 		NSString* dateString = stringFromTime(crashTime, CR4DateFormatPretty);
@@ -205,6 +221,8 @@
 								culprit];
 		if (info->vm_info)
 			[logStr appendFormat:@"VM Protection: %s\n", info->vm_info];
+		if (terminationReason.length)
+			[logStr appendFormat:@"Termination Reason: %@\n", terminationReason];
 		[logStr appendString:@"\n"];
 		[logStr appendFormat:  @"Triggered by thread: %llu\n"
 								@"Thread name: %@\n"
