@@ -36,7 +36,19 @@ void openURL(NSString* urlStr)
 	[mainSection addCell:[FRPLinkCell cellWithTitle:@"Process blacklist" selectedBlock:^(id sender) {
 		[settingsVC.navigationController pushViewController:[CRABlacklistViewController new] animated:YES];
 	}]];
-
+    
+    //Dark mode section
+    FRPSection* darkModeSection = [FRPSection sectionWithTitle:@"Style" footer:@"Experimental!"];
+    FRPSegmentCell* styleSegmentCell = [FRPSegmentCell   cellWithTitle:@"App style"
+                                                    setting:[FRPSettings settingsWithKey:kAppStyle defaultValue:@"Bright"]
+                                                    values:@[@"Bright", @"Dark"]
+                                                    displayedValues:@[@"Bright", @"Dark"]
+                                                       postNotification:CR4ProcsNeedRefreshNotificationName
+                                                    changeBlock:^(NSString* value) {
+                                                        [settingsVC updatePrefsWithKey:kAppStyle value:value];
+                                                    }];
+    [mainSection addCell:styleSegmentCell];
+    
 	//credits section
 	FRPSection* creditsSection = [FRPSection sectionWithTitle:@"Credits" footer:@""];
 	[creditsSection addCell:[FRPLinkCell cellWithTitle:@"Follow @Muirey03 on Twitter" selectedBlock:^(id sender) {

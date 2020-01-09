@@ -3,6 +3,7 @@
 #define CR4ProcsNeedRefreshNotificationName @"com.muirey03.cr4shed-procsNeedRefresh"
 #define CR4BlacklistDidChangeNotificationName @"com.muirey03.cr4shed-blacklistDidChange"
 #define kSortingMethod @"SortingMethod"
+#define kAppStyle @"AppStyle"
 #define kProcessBlacklist @"ProcessBlacklist"
 
 typedef NS_ENUM(NSInteger, CR4DateFormat)

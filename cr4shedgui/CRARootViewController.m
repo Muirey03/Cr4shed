@@ -138,6 +138,7 @@
 	}
 }
 
+
 -(void)loadLogs
 {
 	_procs = [NSMutableArray new];
