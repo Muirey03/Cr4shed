@@ -26,7 +26,6 @@
     self.navigationItem.rightBarButtonItem = shareButton;
 
     webView = [WKWebView new];
-    webView.scrollView.bounces = NO;
     logMessage = _log.contents;
 
     NSString* htmlString =  @"<html><head><title>.</title><meta name='viewport' content='initial-scale=1.0,maximum-scale=3.0'/></head><body><pre style=\"font-size:8pt;\">%@</pre></body></html>";
