@@ -2,9 +2,9 @@
 #import "CRAProcViewController.h"
 #import "Process.h"
 #import "Log.h"
-#import "../sharedutils.h"
+#import <sharedutils.h>
 #import "UIImage+UIKitImage.h"
-#import "Cephei/HBPreferences.h"
+#import <Cephei/HBPreferences.h>
 #include <objc/runtime.h>
 
 @implementation ProcessCell

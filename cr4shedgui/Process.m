@@ -1,7 +1,7 @@
 #import "Process.h"
 #import "Log.h"
-#import "Cephei/HBPreferences.h"
-#import "../sharedutils.h"
+#import <Cephei/HBPreferences.h>
+#import <sharedutils.h>
 
 @implementation Process
 -(instancetype)initWithName:(NSString*)procName

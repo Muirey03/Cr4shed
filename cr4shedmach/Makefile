@@ -4,8 +4,8 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = Cr4shedMach
 
-Cr4shedMach_FILES = $(wildcard *.xm *.mm) ../symbolication.mm ../sharedutils.mm
-Cr4shedMach_CFLAGS = -fobjc-arc
+Cr4shedMach_FILES = $(wildcard *.xm *.mm ../Shared/*.mm)
+Cr4shedMach_CFLAGS = -fobjc-arc -I../Include
 Cr4shedMach_LDFLAGS += -F../Frameworks/ -L../Libraries/
 Cr4shedMach_FRAMEWORKS = CoreSymbolication AppSupport
 Cr4shedMach_LIBRARIES = MobileGestalt notifications

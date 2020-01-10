@@ -1,41 +1,35 @@
 @import Foundation;
 
-#include "AppSupport/CPDistributedMessagingCenter.h"
-#import "rocketbootstrap/rocketbootstrap.h"
+#import <AppSupport/CPDistributedMessagingCenter.h>
+#import "Include/rocketbootstrap/rocketbootstrap.h"
+#import <sharedutils.h>
 #import "symbolication.h"
-#import "sharedutils.h"
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
 
-#define isSB [[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"]
 #define LOAD_APPSUPPORT() lazyLoadBundle(@"/System/Library/PrivateFrameworks/AppSupport.framework")
 
-static void writeStringToFile(NSString* str, NSString* path)
+@interface Cr4shedServer : NSObject
++ (id)sharedInstance;
+-(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
+-(NSDictionary*)writeString:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
+@end
+
+static NSString* writeStringToFile(NSString* str, NSString* filename)
 {
-    if (isSB || [[NSFileManager defaultManager] isWritableFileAtPath:path])
+    NSDictionary* reply;
+    if (%c(Cr4shedServer))
     {
-        [str writeToFile:path atomically:NO encoding:NSUTF8StringEncoding error:nil];
+        reply = [[%c(Cr4shedServer) sharedInstance] writeString:nil withUserInfo:@{@"string" : str, @"filename" : filename}];
     }
     else
     {
         LOAD_APPSUPPORT();
-        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.Cr4shedServer"];
+        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.cr4sheddserver"];
         rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
-        [messagingCenter sendMessageName:@"writeString" userInfo:@{@"string" : str, @"path" : path}];
+        reply = [messagingCenter sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}];
     }
-}
-
-static BOOL createDir(NSString* path)
-{
-    if (isSB || [[NSFileManager defaultManager] isWritableFileAtPath:path])
-    {
-        return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:nil error:nil];
-    }
-    LOAD_APPSUPPORT();
-    CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.Cr4shedServer"];
-    rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
-    NSDictionary* reply = [messagingCenter sendMessageAndReceiveReplyName:@"createDir" userInfo:@{@"path" : path}];
-    return [reply[@"success"] boolValue];
+    return reply[@"path"];
 }
 
 static NSString* getCallStack(NSException* e)
@@ -45,21 +39,16 @@ static NSString* getCallStack(NSException* e)
     return symbolStr;
 }
 
-@interface Cr4shedServer : NSObject
-+ (id)sharedInstance;
--(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
-@end
-
-void sendNotification(NSString* content, NSDictionary* userInfo)
+static void sendNotification(NSString* content, NSDictionary* userInfo)
 {
-    if (isSB)
+    if (%c(Cr4shedServer))
     {
         [[%c(Cr4shedServer) sharedInstance] sendNotification:nil withUserInfo:@{@"content" : content}];
     }
     else
     {
         LOAD_APPSUPPORT();
-        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.Cr4shedServer"];
+        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.cr4sheddserver"];
         rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
         [messagingCenter sendMessageName:@"sendNotification" userInfo:@{@"content" : content, @"userInfo" : userInfo}];
     }
@@ -130,23 +119,16 @@ static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extra
     }];
     errorMessage = addInfoToLog(errorMessage, [extraInfo copy]);
 
-    // Create the dir if it doesn't exist already:
-    BOOL isDir;
-    BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/mobile/Library/Cr4shed" isDirectory:&isDir];
-    if (!dirExists)
-        dirExists = createDir(@"/var/mobile/Library/Cr4shed");
-    if (!dirExists) return; //should never happen, but just in case
-
     // Get the date to use for the filename:
     NSString* filenameDateStr = stringFromDate(now, CR4DateFormatFilename);
 
-    // Get the path for the new crash log:
-    NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@.log", processName, filenameDateStr];
-    for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:path]; i++)
-        path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@ (%d).log", processName, filenameDateStr, i];
+    // Get the filename for the new crash log:
+    NSString* filename = [NSString stringWithFormat:@"%@@%@", processName, filenameDateStr];
 
     // Create the crash log
-    writeStringToFile(errorMessage, path);
+    NSString* path = writeStringToFile(errorMessage, filename);
+    if (!path)
+        return;
 
     //show notification:
     NSDictionary* notifUserInfo = @{@"logPath" : path};
@@ -285,7 +267,7 @@ inline BOOL isHardBlacklisted(NSString* procName)
     @autoreleasepool
     {
         if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"])
-            dlopen("/Library/MobileSubstrate/DynamicLibraries/__Cr4shedSB.dylib", RTLD_NOW);
+            dlopen("/Library/MobileSubstrate/DynamicLibraries/Cr4shedSB.dylib", RTLD_NOW);
 
         if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
         {

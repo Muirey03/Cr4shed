@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mach-o/dyld_images.h>
-#import "MobileGestalt/MobileGestalt.h"
-#import "sharedutils.h"
-#import "Cephei/HBPreferences.h"
+#import <MobileGestalt/MobileGestalt.h>
+#import <sharedutils.h>
+#import <Cephei/HBPreferences.h>
 
 extern "C" {
 
@@ -79,12 +79,12 @@ NSString* stringFromDate(NSDate* date, CR4DateFormat type)
 
 NSString* deviceVersion()
 {
-    return (__bridge NSString*)MGCopyAnswer(CFSTR("ProductVersion")) ?: @"Unknown";
+    return (__bridge NSString*)MGCopyAnswer(CFSTR("ProductVersion"), NULL) ?: @"Unknown";
 }
 
 NSString* deviceName()
 {
-    return (__bridge NSString*)MGCopyAnswer(CFSTR("marketing-name")) ?: @"Unknown";
+    return (__bridge NSString*)MGCopyAnswer(CFSTR("marketing-name"), NULL) ?: @"Unknown";
 }
 
 #define MAX_CHUNK_SIZE 0xFFF

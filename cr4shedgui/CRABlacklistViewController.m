@@ -1,6 +1,6 @@
 #import "CRABlacklistViewController.h"
-#import "Cephei/HBPreferences.h"
-#import "../sharedutils.h"
+#import <Cephei/HBPreferences.h>
+#import <sharedutils.h>
 
 @implementation CRABlacklistCell
 -(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString*)reuseIdentifier

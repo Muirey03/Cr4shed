@@ -2,7 +2,7 @@
 #import "CRALogInfoViewController.h"
 #import "Log.h"
 #import "CRALogController.h"
-#import "../sharedutils.h"
+#import <sharedutils.h>
 #import "dpkgutils.h"
 #import "UIImage+UIKitImage.h"
 

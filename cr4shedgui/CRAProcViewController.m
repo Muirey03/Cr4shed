@@ -2,7 +2,7 @@
 #import "Process.h"
 #import "CRALogInfoViewController.h"
 #import "Log.h"
-#import "../sharedutils.h"
+#import <sharedutils.h>
 
 @implementation CRAProcViewController
 -(instancetype)initWithProcess:(Process*)proc

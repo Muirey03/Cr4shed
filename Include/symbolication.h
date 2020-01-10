@@ -1,4 +1,4 @@
-#include "CoreSymbolication/CoreSymbolication.h"
+#import <CoreSymbolication/CoreSymbolication.h>
 
 NSString* nameForSymbol(NSNumber* addrNum, uint64_t* outOffset);
 NSArray* symbolicatedStackSymbols(NSArray* callStackSymbols, NSArray* callStackReturnAddresses);

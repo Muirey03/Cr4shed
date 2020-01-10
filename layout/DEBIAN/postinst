@@ -1,5 +1,11 @@
 #!/bin/sh
 echo "Killing ReportCrash..."
-killall ReportCrash
+killall ReportCrash 2> /dev/null
+echo "Starting cr4shedd..."
+chown root:wheel /usr/libexec/cr4shedd
+chmod 755 /usr/libexec/cr4shedd
+chown root:wheel /Library/LaunchDaemons/com.muirey03.cr4shedd.plist
+chmod 644 /Library/LaunchDaemons/com.muirey03.cr4shedd.plist
+launchctl load /Library/LaunchDaemons/com.muirey03.cr4shedd.plist
 echo "Done!"
 exit 0

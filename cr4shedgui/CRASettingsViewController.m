@@ -1,7 +1,7 @@
 #import "CRASettingsViewController.h"
 #import "UIImage+UIKitImage.h"
-#import "../sharedutils.h"
-#import "Cephei/HBPreferences.h"
+#import <sharedutils.h>
+#import <Cephei/HBPreferences.h>
 #import "CRABlacklistViewController.h"
 
 void openURL(NSString* urlStr)

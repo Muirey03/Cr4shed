@@ -5,11 +5,11 @@
 #include <uuid/uuid.h>
 #include <mach/mach.h>
 #import <substrate.h>
+#import <symbolication.h>
+#import <sharedutils.h>
+#import <libnotifications.h>
 #import "cr4shed_mach.h"
 #import "mach_utils.h"
-#import "../symbolication.h"
-#import "../sharedutils.h"
-#import "../libnotifications.h"
 
 %hook CrashReport
 %property (nonatomic, assign) time_t crashTime;

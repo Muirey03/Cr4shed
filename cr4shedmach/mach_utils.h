@@ -1,7 +1,7 @@
 #include <mach/mach.h>
 #include <vector>
 #import <objc/runtime.h>
-#import "../sharedutils.h"
+#import <sharedutils.h>
 
 typedef struct
 {

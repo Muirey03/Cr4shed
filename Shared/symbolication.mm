@@ -1,6 +1,6 @@
 @import Foundation;
 
-#import "MobileGestalt/MobileGestalt.h"
+#import <MobileGestalt/MobileGestalt.h>
 #include <mach-o/dyld.h>
 #include <dlfcn.h>
 #include <mach-o/loader.h>

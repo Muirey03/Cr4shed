@@ -1,5 +1,5 @@
 #import "Log.h"
-#import "../sharedutils.h"
+#import <sharedutils.h>
 
 @implementation Log
 {

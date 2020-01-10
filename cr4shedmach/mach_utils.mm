@@ -3,7 +3,7 @@
 #import "mach_utils.h"
 #include <stdlib.h>
 #include <string.h>
-#include "AppSupport/CPDistributedMessagingCenter.h"
+#include <AppSupport/CPDistributedMessagingCenter.h>
 
 #define EXC_UNIX_BAD_SYSCALL 0x10000
 #define EXC_UNIX_BAD_PIPE 0x10001
@@ -284,7 +284,7 @@ void writeStringToFile(NSString* str, NSString* path)
 
 NSString* stringFromTime(time_t t, CR4DateFormat type)
 {
-	CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.Cr4shedServer"];
+	CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
     NSDictionary* reply = [messagingCenter sendMessageAndReceiveReplyName:@"stringFromTime" userInfo:@{@"time" : @(t), @"type" : @(type)}];
     return reply[@"ret"];
 }
