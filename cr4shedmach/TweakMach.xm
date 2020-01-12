@@ -201,15 +201,21 @@
 		NSMutableString* logStr = [NSMutableString stringWithFormat:@"Date: %@\n"
 															@"Process: %@\n"
 															@"Bundle id: %@\n"
-															@"Device: %@\n\n",
+															@"Device: %@\n",
 															dateString,
 															info->processName,
 															info->bundleID,
 															device];
 		
+		NSString* versionString = CR4GetIvar<NSString*>(self, "_short_vers");
+		if (!versionString.length)
+			versionString = CR4GetIvar<NSString*>(self, "_bundle_vers");
+		if (versionString.length)
+			[logStr appendFormat:@"Bundle version: %@\n", versionString];
+		
 		NSString* culprit = determineCulprit(info->stackSymbols);
 		NSString* stackSymbols = [info->stackSymbols componentsJoinedByString:@"\n"];
-		[logStr appendFormat:  	@"Exception type: %@\n"
+		[logStr appendFormat:  	@"\nException type: %@\n"
 								@"Exception subtype: %s\n"
 								@"Exception codes: %s\n"
 								@"Culprit: %@\n",

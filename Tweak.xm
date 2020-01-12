@@ -91,24 +91,31 @@ static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extra
     NSString* processID = [NSBundle mainBundle].bundleIdentifier;
     NSString* processName = [[NSProcessInfo processInfo] processName];
     NSString* device = [NSString stringWithFormat:@"%@, iOS %@", deviceName(), deviceVersion()];
+    NSBundle* bundle = [NSBundle mainBundle];
+    NSString* versionString = bundle.infoDictionary[@"CFBundleShortVersionString"];
+    if (!versionString)
+        versionString = bundle.infoDictionary[@"CFBundleVersion"];
 
-    NSString* errorMessage = [NSString stringWithFormat:@"Date: %@\n"
-                                                        @"Process: %@\n"
-                                                        @"Bundle id: %@\n"
-                                                        @"Device: %@\n\n"
-                                                        @"%@\n\n"
-                                                        @"Loaded images:\n",
-                                                        dateString,
-                                                        processName,
-                                                        processID,
-                                                        device,
-                                                        specialisedInfo];
+    NSMutableString* errorMessage = [NSMutableString stringWithFormat:  @"Date: %@\n"
+                                                                        @"Process: %@\n"
+                                                                        @"Bundle id: %@\n"
+                                                                        @"Device: %@\n",
+                                                                        dateString,
+                                                                        processName,
+                                                                        processID,
+                                                                        device];
+
+    if (versionString.length)
+        [errorMessage appendFormat:@"Bundle version: %@\n", versionString];
+    [errorMessage appendFormat: @"\n%@\n\n"
+                                @"Loaded images:\n",
+                                specialisedInfo];
 
     //add image infos:
     uint32_t image_cnt = _dyld_image_count();
     for (unsigned int i = 0; i < image_cnt; i++)
     {
-        errorMessage = [errorMessage stringByAppendingFormat:@"%u: %s (Version: %lu)\n", i, _dyld_get_image_name(i), getImageVersion(i)];
+        [errorMessage appendFormat:@"%u: %s (Version: %lu)\n", i, _dyld_get_image_name(i), getImageVersion(i)];
     }
 
     //extra info for the GUI to parse easily:
@@ -117,7 +124,7 @@ static void createCrashLog(NSString* specialisedInfo, NSMutableDictionary* extra
         @"ProcessName" : processName ?: @"",
         @"ProcessBundleID" : processID ?: @""
     }];
-    errorMessage = addInfoToLog(errorMessage, [extraInfo copy]);
+    errorMessage = [addInfoToLog(errorMessage, [extraInfo copy]) mutableCopy];
 
     // Get the date to use for the filename:
     NSString* filenameDateStr = stringFromDate(now, CR4DateFormatFilename);
