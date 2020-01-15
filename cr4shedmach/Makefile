@@ -8,7 +8,7 @@ Cr4shedMach_FILES = $(wildcard *.xm *.mm ../Shared/*.mm)
 Cr4shedMach_CFLAGS = -fobjc-arc -I../Include
 Cr4shedMach_LDFLAGS += -F../Frameworks/ -L../Libraries/
 Cr4shedMach_FRAMEWORKS = CoreSymbolication AppSupport
-Cr4shedMach_LIBRARIES = MobileGestalt notifications
+Cr4shedMach_LIBRARIES = MobileGestalt notifications rocketbootstrap
 ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN
 
 include $(THEOS_MAKE_PATH)/tweak.mk

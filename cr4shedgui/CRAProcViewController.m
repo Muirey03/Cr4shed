@@ -2,6 +2,7 @@
 #import "Process.h"
 #import "CRALogInfoViewController.h"
 #import "Log.h"
+#import "CRAProcessManager.h"
 #import <sharedutils.h>
 
 @implementation CRAProcViewController
@@ -14,6 +15,7 @@
     	    return [b.date compare:a.date];
     	}];
         self.title = _proc.name;
+        _processManager = [CRAProcessManager sharedInstance];
     }
     return self;
 }
@@ -26,6 +28,14 @@
 
 	//remove extra separators
 	self.tableView.tableFooterView = [UIView new];
+
+    //pull to refresh:
+	_refreshControl = [UIRefreshControl new];
+    [_refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
+	if ([self.tableView respondsToSelector:@selector(setRefreshControl:)])
+        self.tableView.refreshControl = _refreshControl;
+	else
+        [self.tableView addSubview:_refreshControl];
 }
 
 -(void)viewDidAppear:(BOOL)arg1
@@ -34,6 +44,34 @@
     self.navigationController.interactivePopGestureRecognizer.delegate = self;
     self.navigationController.interactivePopGestureRecognizer.enabled = YES;
 }
+
+-(void)refreshTable:(id)obj
+{
+	[self refreshLogs];
+	if (_refreshControl.refreshing)
+		[_refreshControl endRefreshing];
+	[self.tableView reloadData];
+}
+
+-(void)refreshLogs
+{
+    [[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
+    NSArray* procs = _processManager.processes;
+    BOOL found = NO;
+    for (Process* p in procs)
+    {
+        if ([p.name isEqualToString:_proc.name])
+        {
+            _proc = p;
+            found = YES;
+            break;
+        }
+    }
+    if (!found)
+        [self.navigationController popViewControllerAnimated:YES];
+}
+
+#pragma mark - Gesture Recognizer Delegate
 
 -(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {

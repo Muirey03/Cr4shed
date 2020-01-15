@@ -1,4 +1,5 @@
 @class Process;
+@class CRAProcessManager;
 
 @interface ProcessCell : UITableViewCell
 {
@@ -13,10 +14,10 @@
 @interface CRARootViewController : UITableViewController
 {
 	UIRefreshControl* _refreshControl;
+    CRAProcessManager* _processManager;
+    NSMutableArray<Process*>* _procs;
 }
 -(void)refreshTable:(UIRefreshControl*)control;
--(void)sortProcs;
--(void)loadLogs;
 -(void)deleteProcessAtIndexPath:(NSIndexPath*)indexPath;
 @end
 

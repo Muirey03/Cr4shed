@@ -1,5 +1,6 @@
 #import "CRARootViewController.h"
 #import "CRAProcViewController.h"
+#import "CRAProcessManager.h"
 #import "Process.h"
 #import "Log.h"
 #import <sharedutils.h>
@@ -53,10 +54,6 @@
 @end
 
 @implementation CRARootViewController
-{
-	NSMutableArray<Process*>* _procs;
-}
-
 -(instancetype)init
 {
 	if ((self = [super init]))
@@ -69,6 +66,7 @@
 		self.title = @"Cr4shed";
 		UIImage* itemImg = [[UIImage uikitImageNamed:@"UIButtonBarBookmarks"] resizeToWidth:25.];
 		self.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"Reports" image:itemImg tag:0];
+		_processManager = [CRAProcessManager sharedInstance];
 	}
 	return self;
 }
@@ -103,7 +101,8 @@
 
 -(void)refreshTable:(id)obj
 {
-	[self loadLogs];
+	[_processManager refresh];
+	_procs = _processManager.processes;
 	if (_refreshControl.refreshing)
 		[_refreshControl endRefreshing];
 	[self.tableView reloadData];
@@ -114,77 +113,6 @@
     [super viewDidAppear:arg1];
     self.navigationController.interactivePopGestureRecognizer.delegate = nil;
     self.navigationController.interactivePopGestureRecognizer.enabled = NO;
-}
-
--(void)sortProcs
-{
-	NSString* sortingMethod = [[NSUserDefaults standardUserDefaults] objectForKey:kSortingMethod];
-	[_procs sortUsingComparator:^NSComparisonResult(Process* a, Process* b) {
-		//Date = @"Date" or nil
-		//Name = @"Name"
-		if ([sortingMethod isEqualToString:@"Name"])
-			return [[a.name lowercaseString] compare:[b.name lowercaseString]];
-		NSDate* first = a.latestDate;
-	    NSDate* second = b.latestDate; 
-	    return [second compare:first];
-	}];
-	for (int i = 0; i < _procs.count; i++)
-	{
-		if (_procs[i].logs.count == 0)
-		{
-			[_procs removeObjectAtIndex:i];
-			i--;
-		}
-	}
-}
-
--(void)loadLogs
-{
-	_procs = [NSMutableArray new];
-	//loop through all logs
-	NSString* const logsDirectory = @"/var/mobile/Library/Cr4shed";
-	NSMutableArray* files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:logsDirectory error:nil] mutableCopy];
-	for (int i = 0; i < files.count; i++)
-	{
-		NSString* fileName = files[i];
-		NSString* filePath = [logsDirectory stringByAppendingPathComponent:fileName];
-		if (![[fileName pathExtension] isEqualToString:@"log"])
-		{
-			[files removeObjectAtIndex:i];
-			i--;
-			continue;
-		}
-		//file is a log
-		Process* proc = nil;
-		NSArray<NSString*>* comp = [fileName componentsSeparatedByString:@"@"];
-		NSString* procName = comp.count > 1 ? comp[0] : @"(null)";
-
-		//check if process is already in array
-		for (Process* p in _procs)
-		{
-			if ([p.name isEqualToString:procName])
-			{
-				proc = p;
-				break;
-			}
-		}
-		if (!proc)
-		{
-			//process isn't in array, add it
-			proc = [[Process alloc] initWithName:procName];
-			[_procs addObject:proc];
-		}
-		Log* log = [[Log alloc] initWithPath:filePath];
-		[proc.logs addObject:log];
-
-		NSDate* date = log.date;
-		if (!proc.latestDate || [proc.latestDate compare:date] == NSOrderedAscending)
-		{
-			proc.latestDate = date;
-		}
-	}
-
-	[self sortProcs];
 }
 
 -(void)deleteProcessAtIndexPath:(NSIndexPath*)indexPath
@@ -288,5 +216,4 @@
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 }
-
 @end
