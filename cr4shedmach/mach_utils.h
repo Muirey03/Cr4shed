@@ -2,6 +2,7 @@
 #include <vector>
 #import <objc/runtime.h>
 #import <sharedutils.h>
+#include <time.h>
 
 typedef struct
 {

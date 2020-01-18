@@ -1,3 +1,4 @@
+@import CoreFoundation;
 @import Foundation;
 
 #import "mach_utils.h"
@@ -285,8 +286,16 @@ void writeStringToFile(NSString* str, NSString* path)
 
 NSString* stringFromTime(time_t t, CR4DateFormat type)
 {
+	if (!t) t = time(NULL);
 	CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-	rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
+    rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
     NSDictionary* reply = [messagingCenter sendMessageAndReceiveReplyName:@"stringFromTime" userInfo:@{@"time" : @(t), @"type" : @(type)}];
-    return reply[@"ret"];
+    NSString* str = reply[@"ret"];
+	//fallback if cr4shedd is not available or failed for whatever reason
+	if (!str)
+	{
+		NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
+    	str = stringFromDate(date, type);
+	}
+	return str;
 }

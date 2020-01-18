@@ -1,3 +1,4 @@
+@import CoreFoundation;
 @import Foundation;
 
 #include <AppSupport/CPDistributedMessagingCenter.h>
