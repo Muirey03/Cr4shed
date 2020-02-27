@@ -1,8 +1,7 @@
 @import CoreFoundation;
 @import Foundation;
 
-#include <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
+#import <MRYIPCCenter.h>
 #import <libnotifications.h>
 #import <sharedutils.h>
 #include <pthread.h>
@@ -14,7 +13,7 @@
 
 @implementation Cr4shedServer
 {
-	CPDistributedMessagingCenter* _messagingCenter;
+	MRYIPCCenter* _ipcCenter;
 }
 
 +(void)load
@@ -36,17 +35,15 @@
 {
 	if ((self = [super init]))
     {
-        _messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-        rocketbootstrap_distributedmessagingcenter_apply(_messagingCenter);
-		[_messagingCenter registerForMessageName:@"writeString" target:self selector:@selector(writeString:withUserInfo:)];
-	    [_messagingCenter registerForMessageName:@"sendNotification" target:self selector:@selector(sendNotification:withUserInfo:)];
-        [_messagingCenter registerForMessageName:@"stringFromTime" target:self selector:@selector(stringFromTime:withUserInfo:)];
-		[_messagingCenter runServerOnCurrentThread];
+        _ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+		[_ipcCenter addTarget:self action:@selector(writeString:)];
+	    [_ipcCenter addTarget:self action:@selector(sendNotification:)];
+        [_ipcCenter addTarget:self action:@selector(stringFromTime:)];
 	}
     return self;
 }
 
--(NSDictionary*)writeString:(NSString*)name withUserInfo:(NSDictionary*)userInfo
+-(NSDictionary*)writeString:(NSDictionary*)userInfo
 {
 	//get info from userInfo:
     NSString* str = userInfo[@"string"];
@@ -97,7 +94,7 @@
     return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:attributes error:NULL];
 }
 
--(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo
+-(void)sendNotification:(NSDictionary*)userInfo
 {
     NSString* content = userInfo[@"content"];
 	NSString* bundleID = @"com.muirey03.cr4shedgui";
@@ -111,10 +108,9 @@
                                 delay:0.
                                 repeats:NO
                                 bundleId:bundleID];
-    return nil;
 }
 
--(NSDictionary*)stringFromTime:(NSString*)name withUserInfo:(NSDictionary*)userInfo
+-(NSDictionary*)stringFromTime:(NSDictionary*)userInfo
 {
     time_t t = (time_t)[userInfo[@"time"] integerValue];
     CR4DateFormat type = (CR4DateFormat)[userInfo[@"type"] integerValue];

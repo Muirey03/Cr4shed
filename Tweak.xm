@@ -1,18 +1,15 @@
 @import Foundation;
 
-#import <AppSupport/CPDistributedMessagingCenter.h>
-#import "Include/rocketbootstrap/rocketbootstrap.h"
+#import <MRYIPCCenter.h>
 #import <sharedutils.h>
 #import "symbolication.h"
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
 
-#define LOAD_APPSUPPORT() lazyLoadBundle(@"/System/Library/PrivateFrameworks/AppSupport.framework")
-
 @interface Cr4shedServer : NSObject
 + (id)sharedInstance;
--(NSDictionary*)sendNotification:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
--(NSDictionary*)writeString:(NSString*)name withUserInfo:(NSDictionary*)userInfo;
+-(NSDictionary*)sendNotification:(NSDictionary*)userInfo;
+-(NSDictionary*)writeString:(NSDictionary*)userInfo;
 @end
 
 static NSString* writeStringToFile(NSString* str, NSString* filename)
@@ -20,14 +17,12 @@ static NSString* writeStringToFile(NSString* str, NSString* filename)
     NSDictionary* reply;
     if (%c(Cr4shedServer))
     {
-        reply = [[%c(Cr4shedServer) sharedInstance] writeString:nil withUserInfo:@{@"string" : str, @"filename" : filename}];
+        reply = [[%c(Cr4shedServer) sharedInstance] writeString:@{@"string" : str, @"filename" : filename}];
     }
     else
     {
-        LOAD_APPSUPPORT();
-        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.cr4sheddserver"];
-        rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
-        reply = [messagingCenter sendMessageAndReceiveReplyName:@"writeString" userInfo:@{@"string" : str, @"filename" : filename}];
+        MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+        reply = [ipcCenter callExternalMethod:@selector(writeString:) withArguments:@{@"string" : str, @"filename" : filename}];
     }
     return reply[@"path"];
 }
@@ -43,14 +38,12 @@ static void sendNotification(NSString* content, NSDictionary* userInfo)
 {
     if (%c(Cr4shedServer))
     {
-        [[%c(Cr4shedServer) sharedInstance] sendNotification:nil withUserInfo:@{@"content" : content}];
+        [[%c(Cr4shedServer) sharedInstance] sendNotification:@{@"content" : content}];
     }
     else
     {
-        LOAD_APPSUPPORT();
-        CPDistributedMessagingCenter* messagingCenter = [%c(CPDistributedMessagingCenter) centerNamed:@"com.muirey03.cr4sheddserver"];
-        rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
-        [messagingCenter sendMessageName:@"sendNotification" userInfo:@{@"content" : content, @"userInfo" : userInfo}];
+        MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+        [ipcCenter callExternalVoidMethod:@selector(sendNotification:) withArguments:@{@"content" : content, @"userInfo" : userInfo}];
     }
 }
 

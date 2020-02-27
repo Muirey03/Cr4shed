@@ -4,8 +4,7 @@
 #import "mach_utils.h"
 #include <stdlib.h>
 #include <string.h>
-#include <AppSupport/CPDistributedMessagingCenter.h>
-#import <rocketbootstrap/rocketbootstrap.h>
+#include <MRYIPCCenter.h>
 
 #define EXC_UNIX_BAD_SYSCALL 0x10000
 #define EXC_UNIX_BAD_PIPE 0x10001
@@ -287,9 +286,8 @@ void writeStringToFile(NSString* str, NSString* path)
 NSString* stringFromTime(time_t t, CR4DateFormat type)
 {
 	if (!t) t = time(NULL);
-	CPDistributedMessagingCenter* messagingCenter = [CPDistributedMessagingCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-    rocketbootstrap_distributedmessagingcenter_apply(messagingCenter);
-    NSDictionary* reply = [messagingCenter sendMessageAndReceiveReplyName:@"stringFromTime" userInfo:@{@"time" : @(t), @"type" : @(type)}];
+	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+    NSDictionary* reply = [ipcCenter callExternalMethod:@selector(stringFromTime:) withArguments:@{@"time" : @(t), @"type" : @(type)}];
     NSString* str = reply[@"ret"];
 	//fallback if cr4shedd is not available or failed for whatever reason
 	if (!str)
