@@ -75,7 +75,7 @@
 	if ([self.view respondsToSelector:@selector(safeAreaLayoutGuide)])
 		[footer.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor].active = YES;
 	else
-		[footer.bottomAnchor constraintEqualToAnchor:self.bottomLayoutGuide].active = YES;
+		[footer.bottomAnchor constraintEqualToAnchor:self.bottomLayoutGuide.bottomAnchor].active = YES;
 
 	UIButton* viewLogBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	viewLogBtn.translatesAutoresizingMaskIntoConstraints = NO;
