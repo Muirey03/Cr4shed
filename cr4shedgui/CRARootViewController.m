@@ -17,7 +17,10 @@
 		
 		_countLbl = [[UILabel alloc] initWithFrame:CGRectZero];
 		_countLbl.font = [UIFont systemFontOfSize:15.];
-		_countLbl.textColor = [UIColor whiteColor];
+		if (@available(iOS 13, *))
+			_countLbl.textColor = [UIColor whiteColor];
+		else
+			_countLbl.textColor = [UIColor labelColor];
 		_countLbl.backgroundColor = [UIColor systemRedColor];
 		_countLbl.textAlignment = NSTextAlignmentCenter;
 		_countLbl.numberOfLines = 1;

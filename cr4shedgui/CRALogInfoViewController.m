@@ -64,7 +64,11 @@
 	const CGFloat btnCornerRadius = 10.;
 
 	_tableView.tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0., 0., 0., footerHeight)];
-	UIBlurEffect* blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+	UIBlurEffect* blurEffect;
+    if (@available(iOS 13, *))
+		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+    else
+		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
 	UIVisualEffectView* footer = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
 	[self.view addSubview:footer];
 

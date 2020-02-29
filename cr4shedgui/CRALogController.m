@@ -20,7 +20,10 @@
     if ([self.navigationItem respondsToSelector:@selector(setLargeTitleDisplayMode:)])
         self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
 
-    self.view.backgroundColor = [UIColor whiteColor];
+    if (@available(iOS 13, *))
+        self.view.backgroundColor = [UIColor systemBackgroundColor];
+    else
+        self.view.backgroundColor = [UIColor whiteColor];
 
     UIBarButtonItem* shareButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(share:)];
     self.navigationItem.rightBarButtonItem = shareButton;
@@ -28,11 +31,14 @@
     webView = [WKWebView new];
     logMessage = _log.contents;
 
-    NSString* htmlString =  @"<html><head><title>.</title><meta name='viewport' content='initial-scale=1.0,maximum-scale=3.0'/></head><body><pre style=\"font-size:8pt;\">%@</pre></body></html>";
+    NSString *cssString = @"body { font-size:8pt; } @media (prefers-color-scheme: dark) { body { color: white; } }";
+    NSString* htmlString =  @"<html><head><title>.</title><meta name='viewport' content='initial-scale=1.0,maximum-scale=3.0'/><style>%@</style></head><body><pre>%@</pre></body></html>";
     NSString* formattedStr = [logMessage kv_encodeHTMLCharacterEntities];
-    htmlString = [NSString stringWithFormat:htmlString, formattedStr];
+    htmlString = [NSString stringWithFormat:htmlString, cssString, formattedStr];
     [self.view addSubview:webView];
 
+    webView.opaque = NO;
+    webView.backgroundColor = [UIColor clearColor];
     webView.translatesAutoresizingMaskIntoConstraints = NO;
     [webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor].active = YES;
     [webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;

@@ -35,7 +35,10 @@
     lLabel.adjustsFontSizeToFitWidth = YES;
     lLabel.clipsToBounds = YES;
     lLabel.backgroundColor = [UIColor clearColor];
-    lLabel.textColor = [UIColor blackColor];
+    if (@available(iOS 13, *))
+        lLabel.textColor = [UIColor labelColor];
+    else
+        lLabel.textColor = [UIColor blackColor];
     lLabel.textAlignment = NSTextAlignmentCenter;
     [cell.contentView addSubview:lLabel];
     cell.lLabel = lLabel;
@@ -47,7 +50,10 @@
     rLabel.adjustsFontSizeToFitWidth = YES;
     rLabel.clipsToBounds = YES;
     rLabel.backgroundColor = [UIColor clearColor];
-    rLabel.textColor = [UIColor blackColor];
+    if (@available(iOS 13, *))
+        rLabel.textColor = [UIColor labelColor];
+    else
+        rLabel.textColor = [UIColor blackColor];
     rLabel.textAlignment = NSTextAlignmentCenter;
     [cell.contentView addSubview:rLabel];
     cell.rLabel = rLabel;
@@ -59,7 +65,10 @@
     cLabel.adjustsFontSizeToFitWidth = YES;
     cLabel.clipsToBounds = YES;
     cLabel.backgroundColor = [UIColor clearColor];
-    cLabel.textColor = [UIColor blackColor];
+    if (@available(iOS 13, *))
+        cLabel.textColor = [UIColor labelColor];
+    else
+        cLabel.textColor = [UIColor blackColor];
     cLabel.textAlignment = NSTextAlignmentLeft;
     [cell.contentView addSubview:cLabel];
     cell.cLabel = cLabel;
@@ -71,7 +80,10 @@
     vLabel.adjustsFontSizeToFitWidth = YES;
     vLabel.clipsToBounds = YES;
     vLabel.backgroundColor = [UIColor clearColor];
-    vLabel.textColor = [UIColor grayColor];
+    if (@available(iOS 13, *))
+        vLabel.textColor = [UIColor secondaryLabelColor];
+    else
+        vLabel.textColor = [UIColor grayColor];
     vLabel.textAlignment = NSTextAlignmentRight;
     [cell.contentView addSubview:vLabel];
     cell.vLabel = vLabel;
