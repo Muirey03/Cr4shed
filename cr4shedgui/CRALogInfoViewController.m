@@ -64,7 +64,11 @@
 	const CGFloat btnCornerRadius = 10.;
 
 	_tableView.tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0., 0., 0., footerHeight)];
-	UIBlurEffect* blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+	UIBlurEffect* blurEffect;
+    if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){13,0,0}])
+		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+    else
+		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
 	UIVisualEffectView* footer = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
 	[self.view addSubview:footer];
 
@@ -75,7 +79,7 @@
 	if ([self.view respondsToSelector:@selector(safeAreaLayoutGuide)])
 		[footer.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor].active = YES;
 	else
-		[footer.bottomAnchor constraintEqualToAnchor:self.bottomLayoutGuide].active = YES;
+		[footer.bottomAnchor constraintEqualToAnchor:self.bottomLayoutGuide.topAnchor].active = YES;
 
 	UIButton* viewLogBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	viewLogBtn.translatesAutoresizingMaskIntoConstraints = NO;

@@ -8,7 +8,7 @@
 @implementation CRAProcViewController
 -(instancetype)initWithProcess:(Process*)proc
 {
-    if ((self = [self init]))
+    if ((self = [self initWithStyle:UITableViewStyleGrouped]))
     {
         _proc = proc;
         [_proc.logs sortUsingComparator:^NSComparisonResult(Log* a, Log* b) {
@@ -25,9 +25,6 @@
 	[super loadView];
 
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
-
-	//remove extra separators
-	self.tableView.tableFooterView = [UIView new];
 
     //pull to refresh:
 	_refreshControl = [UIRefreshControl new];

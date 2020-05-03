@@ -29,7 +29,7 @@ static NSString* writeStringToFile(NSString* str, NSString* filename)
 
 static NSString* getCallStack(NSException* e)
 {
-    NSArray* symbols = symbolicatedCallStack(e);
+    NSArray* symbols = symbolicatedException(e);
     NSString* symbolStr = [symbols componentsJoinedByString:@"\n"];
     return symbolStr;
 }
@@ -43,7 +43,7 @@ static void sendNotification(NSString* content, NSDictionary* userInfo)
     else
     {
         MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-        [ipcCenter callExternalVoidMethod:@selector(sendNotification:) withArguments:@{@"content" : content, @"userInfo" : userInfo}];
+        [ipcCenter callExternalMethod:@selector(sendNotification:) withArguments:@{@"content" : content, @"userInfo" : userInfo}];
     }
 }
 

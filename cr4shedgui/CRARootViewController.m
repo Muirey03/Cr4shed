@@ -56,7 +56,7 @@
 @implementation CRARootViewController
 -(instancetype)init
 {
-	if ((self = [super init]))
+	if ((self = [super initWithStyle:UITableViewStyleGrouped]))
 	{
 		//UIApplicationDidBecomeActiveNotification
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
@@ -80,8 +80,6 @@
 
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
-	//remove extra separators
-	self.tableView.tableFooterView = [UIView new];
 	self.tableView.rowHeight = 50;
 
 	//pull to refresh:

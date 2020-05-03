@@ -168,9 +168,10 @@
 						NSUInteger padding = str.length + 12;
 
 						NSString* uuidStr = [NSString stringWithUTF8String:uuid_cstr];
-						NSString* symbol = nameForSymbolOffsetInImage(addr, [imgDict[@"ExecutablePath"] UTF8String], uuidStr, [imgDict[@"StartAddress"] unsignedLongLongValue], arch);
+						NSString* symbol = nameForRemoteSymbol(addr, imgDict[@"ExecutablePath"], uuidStr, [imgDict[@"StartAddress"] unsignedLongLongValue], arch);
 						callStackSymbols[si] = [callStackSymbols[si] stringByPaddingToLength:padding withString:@" " startingAtIndex:0];
-						callStackSymbols[si] = [callStackSymbols[si] stringByAppendingFormat:@"\t// %@", symbol];
+						if (symbol)
+							callStackSymbols[si] = [callStackSymbols[si] stringByAppendingFormat:@"\t// %@", symbol];
 						free(uuid_cstr);
 					}
 				}

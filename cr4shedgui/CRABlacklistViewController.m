@@ -37,7 +37,7 @@
 
 -(instancetype)init
 {
-    if ((self = [super init]))
+    if ((self = [super initWithStyle:UITableViewStyleGrouped]))
     {
         self.title = @"Blacklist";
 		UIBarButtonItem* plusButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(plusButtonAction)];
@@ -73,9 +73,6 @@
 -(void)loadView
 {
 	[super loadView];
-
-	//remove extra separators
-	self.tableView.tableFooterView = [UIView new];
 
 	//load blacklist:
 	[self reloadBlacklist];

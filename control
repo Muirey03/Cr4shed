@@ -1,7 +1,7 @@
 Package: com.muirey03.cr4shed
 Name: Cr4shed
 Depends: mobilesubstrate, com.muirey03.libmryipc, com.cokepokes.libnotifications (>= 0.2-2), cy+cpu.arm64 | cy+cpu.arm64e, firmware (>= 9.0), ws.hbang.common (>= 1.11)
-Version: 4.1.3
+Version: 4.1.4
 Architecture: iphoneos-arm
 Description: A modern crash reporter for iOS
 Maintainer: Muirey03
