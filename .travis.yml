@@ -8,6 +8,11 @@ env:
 before_install:
 - brew install dpkg ldid
 - git clone --recursive git://github.com/theos/theos.git ~/theos
+- curl -LO https://github.com/SniperGER/iOS13-Private-SDK/archive/master.zip
+- TMP=$(mktemp -d)
+- unzip -qq master.zip -d $TMP
+- mv $TMP/iOS13-Private-SDK-master/sdks/*.sdk $THEOS/sdks
+- rm -r master.zip $TMP
 - chmod 0775 ./layout/DEBIAN/postinst
 - chmod 0775 ./layout/DEBIAN/prerm
 script:
