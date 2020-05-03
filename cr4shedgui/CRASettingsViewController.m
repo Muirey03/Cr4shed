@@ -25,11 +25,11 @@ void openURL(NSString* urlStr)
 	//main section:
 	FRPSection* mainSection = [FRPSection sectionWithTitle:@"General" footer:@""];
 	FRPSegmentCell* segmentCell = [FRPSegmentCell   cellWithTitle:@"Process sorting method"
-                                                	setting:[FRPSettings settingsWithKey:kSortingMethod defaultValue:@"Date"]
-                                                    values:@[@"Date", @"Name"]
-                                            		displayedValues:@[@"Date", @"Name"]
-                                           			postNotification:CR4ProcsNeedRefreshNotificationName
-                                                	changeBlock:^(NSString* value) {
+													setting:[FRPSettings settingsWithKey:kSortingMethod defaultValue:@"Date"]
+													values:@[@"Date", @"Name"]
+													displayedValues:@[@"Date", @"Name"]
+										   			postNotification:CR4ProcsNeedRefreshNotificationName
+													changeBlock:^(NSString* value) {
 														[settingsVC updatePrefsWithKey:kSortingMethod value:value];
 													}];
 	[mainSection addCell:segmentCell];
@@ -77,8 +77,8 @@ void openURL(NSString* urlStr)
 
 -(void)viewDidAppear:(BOOL)arg1
 {
-    [super viewDidAppear:arg1];
-    self.navigationController.interactivePopGestureRecognizer.delegate = nil;
-    self.navigationController.interactivePopGestureRecognizer.enabled = NO;
+	[super viewDidAppear:arg1];
+	self.navigationController.interactivePopGestureRecognizer.delegate = nil;
+	self.navigationController.interactivePopGestureRecognizer.enabled = NO;
 }
 @end

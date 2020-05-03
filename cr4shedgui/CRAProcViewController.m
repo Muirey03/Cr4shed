@@ -8,16 +8,16 @@
 @implementation CRAProcViewController
 -(instancetype)initWithProcess:(Process*)proc
 {
-    if ((self = [self initWithStyle:UITableViewStyleGrouped]))
-    {
-        _proc = proc;
-        [_proc.logs sortUsingComparator:^NSComparisonResult(Log* a, Log* b) {
-    	    return [b.date compare:a.date];
-    	}];
-        self.title = _proc.name;
-        _processManager = [CRAProcessManager sharedInstance];
-    }
-    return self;
+	if ((self = [self initWithStyle:UITableViewStyleGrouped]))
+	{
+		_proc = proc;
+		[_proc.logs sortUsingComparator:^NSComparisonResult(Log* a, Log* b) {
+			return [b.date compare:a.date];
+		}];
+		self.title = _proc.name;
+		_processManager = [CRAProcessManager sharedInstance];
+	}
+	return self;
 }
 
 -(void)loadView
@@ -26,20 +26,20 @@
 
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
-    //pull to refresh:
+	//pull to refresh:
 	_refreshControl = [UIRefreshControl new];
-    [_refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
+	[_refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
 	if ([self.tableView respondsToSelector:@selector(setRefreshControl:)])
-        self.tableView.refreshControl = _refreshControl;
+		self.tableView.refreshControl = _refreshControl;
 	else
-        [self.tableView addSubview:_refreshControl];
+		[self.tableView addSubview:_refreshControl];
 }
 
 -(void)viewDidAppear:(BOOL)arg1
 {
-    [super viewDidAppear:arg1];
-    self.navigationController.interactivePopGestureRecognizer.delegate = self;
-    self.navigationController.interactivePopGestureRecognizer.enabled = YES;
+	[super viewDidAppear:arg1];
+	self.navigationController.interactivePopGestureRecognizer.delegate = self;
+	self.navigationController.interactivePopGestureRecognizer.enabled = YES;
 }
 
 -(void)refreshTable:(id)obj
@@ -52,27 +52,27 @@
 
 -(void)refreshLogs
 {
-    [[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
-    NSArray* procs = _processManager.processes;
-    BOOL found = NO;
-    for (Process* p in procs)
-    {
-        if ([p.name isEqualToString:_proc.name])
-        {
-            _proc = p;
-            found = YES;
-            break;
-        }
-    }
-    if (!found)
-        [self.navigationController popViewControllerAnimated:YES];
+	[[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
+	NSArray* procs = _processManager.processes;
+	BOOL found = NO;
+	for (Process* p in procs)
+	{
+		if ([p.name isEqualToString:_proc.name])
+		{
+			_proc = p;
+			found = YES;
+			break;
+		}
+	}
+	if (!found)
+		[self.navigationController popViewControllerAnimated:YES];
 }
 
 #pragma mark - Gesture Recognizer Delegate
 
 -(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {
-    return YES;
+	return YES;
 }
 
 #pragma mark - Table View Data Source
@@ -92,42 +92,42 @@
 	UITableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:@"LogCell"];
 	if (!cell)
 		cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"LogCell"];
-    
-    Log* log = _proc.logs[indexPath.row];
-    NSString* logName = stringFromDate(log.date, CR4DateFormatPretty);
-    cell.textLabel.text = logName;
-    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+	
+	Log* log = _proc.logs[indexPath.row];
+	NSString* logName = stringFromDate(log.date, CR4DateFormatPretty);
+	cell.textLabel.text = logName;
+	cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	return cell;
 }
 
 -(void)tableView:(UITableView*)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath*)indexPath
 {
-    if (indexPath.row == 0)
-    {
-        if (_proc.logs.count > 1)
-        {
-            //get new latestDate
-            Log* newLog = _proc.logs[1];
-            _proc.latestDate = newLog.date;
-        }
-        else
-        {
-            _proc.latestDate = nil;
-        }
-    }
-    NSString* path = _proc.logs[indexPath.row].path;
-    [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+	if (indexPath.row == 0)
+	{
+		if (_proc.logs.count > 1)
+		{
+			//get new latestDate
+			Log* newLog = _proc.logs[1];
+			_proc.latestDate = newLog.date;
+		}
+		else
+		{
+			_proc.latestDate = nil;
+		}
+	}
+	NSString* path = _proc.logs[indexPath.row].path;
+	[[NSFileManager defaultManager] removeItemAtPath:path error:nil];
 	[_proc.logs removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
 
-    [[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
+	[[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
 }
 
 #pragma mark - Table View Delegate
 
 -(void)tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath*)indexPath
 {
-    CRALogInfoViewController* logVC = [[CRALogInfoViewController alloc] initWithLog:_proc.logs[indexPath.row]];
+	CRALogInfoViewController* logVC = [[CRALogInfoViewController alloc] initWithLog:_proc.logs[indexPath.row]];
 	[self.navigationController pushViewController:logVC animated:YES];
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
@@ -152,11 +152,11 @@
 		NSIndexPath* indexPath = [NSIndexPath indexPathForRow:i inSection:0];
 		[indexPaths addObject:indexPath];
 	}
-    [_proc deleteAllLogs];
+	[_proc deleteAllLogs];
 	[self.tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationAutomatic];
-    
-    [[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
-    [self.navigationController popViewControllerAnimated:YES];
+	
+	[[NSNotificationCenter defaultCenter] postNotificationName:CR4ProcsNeedRefreshNotificationName object:nil];
+	[self.navigationController popViewControllerAnimated:YES];
 }
 
 @end

@@ -84,11 +84,11 @@
 
 	//pull to refresh:
 	_refreshControl = [UIRefreshControl new];
-    [_refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
+	[_refreshControl addTarget:self action:@selector(refreshTable:) forControlEvents:UIControlEventValueChanged];
 	if ([self.tableView respondsToSelector:@selector(setRefreshControl:)])
-        self.tableView.refreshControl = _refreshControl;
+		self.tableView.refreshControl = _refreshControl;
 	else
-        [self.tableView addSubview:_refreshControl];
+		[self.tableView addSubview:_refreshControl];
 }
 
 -(void)viewDidLoad
@@ -108,9 +108,9 @@
 
 -(void)viewDidAppear:(BOOL)arg1
 {
-    [super viewDidAppear:arg1];
-    self.navigationController.interactivePopGestureRecognizer.delegate = nil;
-    self.navigationController.interactivePopGestureRecognizer.enabled = NO;
+	[super viewDidAppear:arg1];
+	self.navigationController.interactivePopGestureRecognizer.delegate = nil;
+	self.navigationController.interactivePopGestureRecognizer.enabled = NO;
 }
 
 -(void)deleteProcessAtIndexPath:(NSIndexPath*)indexPath

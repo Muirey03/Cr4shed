@@ -13,12 +13,12 @@
 
 -(instancetype)initWithLog:(Log*)log
 {
-    if ((self = [self init]))
-    {
-        _log = log;
+	if ((self = [self init]))
+	{
+		_log = log;
 		_info = log.info;
-        self.title = [NSString stringWithFormat:@"%@ (%@)", log.processName, stringFromDate(log.date, CR4DateFormatTimeOnly)];
-    
+		self.title = [NSString stringWithFormat:@"%@ (%@)", log.processName, stringFromDate(log.date, CR4DateFormatTimeOnly)];
+	
 		_infoFormat = [@[
 			@{
 				@"DisplayName" : @"Crash Date",
@@ -41,7 +41,7 @@
 			}];
 		}
 	}
-    return self;
+	return self;
 }
 
 -(void)loadView
@@ -65,9 +65,9 @@
 
 	_tableView.tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0., 0., 0., footerHeight)];
 	UIBlurEffect* blurEffect;
-    if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){13,0,0}])
+	if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){13,0,0}])
 		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
-    else
+	else
 		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
 	UIVisualEffectView* footer = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
 	[self.view addSubview:footer];
@@ -98,9 +98,9 @@
 
 -(void)viewDidAppear:(BOOL)arg1
 {
-    [super viewDidAppear:arg1];
-    self.navigationController.interactivePopGestureRecognizer.delegate = self;
-    self.navigationController.interactivePopGestureRecognizer.enabled = YES;
+	[super viewDidAppear:arg1];
+	self.navigationController.interactivePopGestureRecognizer.delegate = self;
+	self.navigationController.interactivePopGestureRecognizer.enabled = YES;
 }
 
 -(void)viewLog
@@ -236,7 +236,7 @@
 		NSDictionary* info = _infoFormat[indexPath.row];
 		return [info[@"Copyable"] boolValue] || [info[@"HasAction"] boolValue];
 	}
-    return NO;
+	return NO;
 }
 
 -(BOOL)tableView:(UITableView*)tableView shouldShowMenuForRowAtIndexPath:(NSIndexPath*)indexPath
@@ -246,22 +246,22 @@
 		NSDictionary* info = _infoFormat[indexPath.row];
 		return [info[@"Copyable"] boolValue];
 	}
-    return NO;
+	return NO;
 }
 
 -(BOOL)tableView:(UITableView*)tableView canPerformAction:(SEL)action forRowAtIndexPath:(NSIndexPath*)indexPath withSender:(id)sender
 {
-    return sel_isEqual(action, @selector(copy:));
+	return sel_isEqual(action, @selector(copy:));
 }
 
 -(void)tableView:(UITableView*)tableView performAction:(SEL)action forRowAtIndexPath:(NSIndexPath*)indexPath withSender:(id)sender
 {
-    if (indexPath.section == 1 && sel_isEqual(action, @selector(copy:)))
+	if (indexPath.section == 1 && sel_isEqual(action, @selector(copy:)))
 	{
-        NSDictionary* info = _infoFormat[indexPath.row];
-        UIPasteboard* pasteBoard = [UIPasteboard generalPasteboard];
-        [pasteBoard setString:info[@"Value"]];
-    }
+		NSDictionary* info = _infoFormat[indexPath.row];
+		UIPasteboard* pasteBoard = [UIPasteboard generalPasteboard];
+		[pasteBoard setString:info[@"Value"]];
+	}
 }
 
 #pragma mark Mail Compose Controller Delegate

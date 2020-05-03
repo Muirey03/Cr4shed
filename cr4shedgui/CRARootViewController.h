@@ -3,9 +3,9 @@
 
 @interface ProcessCell : UITableViewCell
 {
-    UILabel* _countLbl;
-    NSLayoutConstraint* _widthConstraint;
-    NSLayoutConstraint* _heightConstraint;
+	UILabel* _countLbl;
+	NSLayoutConstraint* _widthConstraint;
+	NSLayoutConstraint* _heightConstraint;
 }
 @property (nonatomic, strong) Process* proc;
 -(void)updateLabels;
@@ -14,8 +14,8 @@
 @interface CRARootViewController : UITableViewController
 {
 	UIRefreshControl* _refreshControl;
-    CRAProcessManager* _processManager;
-    NSMutableArray<Process*>* _procs;
+	CRAProcessManager* _processManager;
+	NSMutableArray<Process*>* _procs;
 }
 -(void)refreshTable:(UIRefreshControl*)control;
 -(void)deleteProcessAtIndexPath:(NSIndexPath*)indexPath;

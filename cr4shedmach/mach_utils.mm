@@ -263,10 +263,10 @@ BOOL createDir(NSString* path)
 {
 	NSDictionary<NSFileAttributeKey, id>* attributes = @{
 		NSFilePosixPermissions : @0755,
-        NSFileOwnerAccountName : @"mobile",
-        NSFileGroupOwnerAccountName : @"mobile"
+		NSFileOwnerAccountName : @"mobile",
+		NSFileGroupOwnerAccountName : @"mobile"
 	};
-    return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:attributes error:nil];
+	return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:attributes error:nil];
 }
 
 void writeStringToFile(NSString* str, NSString* path)
@@ -276,8 +276,8 @@ void writeStringToFile(NSString* str, NSString* path)
 		[manager removeItemAtPath:path error:NULL];
 	NSDictionary<NSFileAttributeKey, id>* attributes = @{
 		NSFilePosixPermissions : @0666,
-        NSFileOwnerAccountName : @"mobile",
-        NSFileGroupOwnerAccountName : @"mobile"
+		NSFileOwnerAccountName : @"mobile",
+		NSFileGroupOwnerAccountName : @"mobile"
 	};
 	NSData* contentsData = [str dataUsingEncoding:NSUTF8StringEncoding];
 	[manager createFileAtPath:path contents:contentsData attributes:attributes];
@@ -287,13 +287,13 @@ NSString* stringFromTime(time_t t, CR4DateFormat type)
 {
 	if (!t) t = time(NULL);
 	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-    NSDictionary* reply = [ipcCenter callExternalMethod:@selector(stringFromTime:) withArguments:@{@"time" : @(t), @"type" : @(type)}];
-    NSString* str = reply[@"ret"];
+	NSDictionary* reply = [ipcCenter callExternalMethod:@selector(stringFromTime:) withArguments:@{@"time" : @(t), @"type" : @(type)}];
+	NSString* str = reply[@"ret"];
 	//fallback if cr4shedd is not available or failed for whatever reason
 	if (!str)
 	{
 		NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
-    	str = stringFromDate(date, type);
+		str = stringFromDate(date, type);
 	}
 	return str;
 }

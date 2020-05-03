@@ -37,9 +37,9 @@
 
 -(instancetype)init
 {
-    if ((self = [super initWithStyle:UITableViewStyleGrouped]))
-    {
-        self.title = @"Blacklist";
+	if ((self = [super initWithStyle:UITableViewStyleGrouped]))
+	{
+		self.title = @"Blacklist";
 		UIBarButtonItem* plusButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(plusButtonAction)];
 		self.navigationItem.rightBarButtonItem = plusButton;
 
@@ -49,7 +49,7 @@
 		self.tableView.editing = YES;
 		self.tableView.allowsSelection = NO;
 	}
-    return self;
+	return self;
 }
 
 -(void)reloadBlacklist
@@ -80,9 +80,9 @@
 
 -(void)viewDidAppear:(BOOL)arg1
 {
-    [super viewDidAppear:arg1];
-    self.navigationController.interactivePopGestureRecognizer.delegate = self;
-    self.navigationController.interactivePopGestureRecognizer.enabled = YES;
+	[super viewDidAppear:arg1];
+	self.navigationController.interactivePopGestureRecognizer.delegate = self;
+	self.navigationController.interactivePopGestureRecognizer.enabled = YES;
 }
 
 #pragma mark - Table View Data Source
@@ -107,8 +107,8 @@
 	CRABlacklistCell* cell = [tableView dequeueReusableCellWithIdentifier:@"BlacklistCell"];
 	if (!cell)
 		cell = [[CRABlacklistCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"BlacklistCell"];
-    
-    cell.textField.text = _blacklist[indexPath.row];
+	
+	cell.textField.text = _blacklist[indexPath.row];
 	cell.textChangedCallback = ^(NSString* text) {
 		_blacklist[indexPath.row] = text;
 		[self updatePreferences];

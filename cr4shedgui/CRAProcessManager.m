@@ -8,9 +8,9 @@
 {
 	static CRAProcessManager* instance = nil;
 	static dispatch_once_t onceToken = 0;
-    dispatch_once (&onceToken, ^{
+	dispatch_once (&onceToken, ^{
 		instance = [CRAProcessManager new];
-    });
+	});
 	return instance;
 }
 
@@ -84,8 +84,8 @@
 		if ([sortingMethod isEqualToString:@"Name"])
 			return [[a.name lowercaseString] compare:[b.name lowercaseString]];
 		NSDate* first = a.latestDate;
-	    NSDate* second = b.latestDate; 
-	    return [second compare:first];
+		NSDate* second = b.latestDate; 
+		return [second compare:first];
 	}];
 	for (int i = 0; i < _processes.count; i++)
 	{

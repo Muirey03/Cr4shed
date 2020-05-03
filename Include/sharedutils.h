@@ -7,9 +7,9 @@
 
 typedef NS_ENUM(NSInteger, CR4DateFormat)
 {
-    CR4DateFormatPretty,
-    CR4DateFormatTimeOnly,
-    CR4DateFormatFilename
+	CR4DateFormatPretty,
+	CR4DateFormatTimeOnly,
+	CR4DateFormatFilename
 };
 
 #ifdef __cplusplus

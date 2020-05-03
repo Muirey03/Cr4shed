@@ -34,20 +34,20 @@
 -(id)init
 {
 	if ((self = [super init]))
-    {
-        _ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+	{
+		_ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
 		[_ipcCenter addTarget:self action:@selector(writeString:)];
-	    [_ipcCenter addTarget:self action:@selector(sendNotification:)];
-        [_ipcCenter addTarget:self action:@selector(stringFromTime:)];
+		[_ipcCenter addTarget:self action:@selector(sendNotification:)];
+		[_ipcCenter addTarget:self action:@selector(stringFromTime:)];
 	}
-    return self;
+	return self;
 }
 
 -(NSDictionary*)writeString:(NSDictionary*)userInfo
 {
 	//get info from userInfo:
-    NSString* str = userInfo[@"string"];
-    NSString* filename = [userInfo[@"filename"] lastPathComponent];
+	NSString* str = userInfo[@"string"];
+	NSString* filename = [userInfo[@"filename"] lastPathComponent];
 	if (!filename)
 		return nil;
 	NSString* fullFilename = [filename stringByAppendingPathExtension:@"log"];
@@ -59,7 +59,7 @@
 	NSString* path = [cr4Dir stringByAppendingPathComponent:fullFilename];
 	//create cr4shed dir if neccessary:
 	//(deleting it if it is a file not a dir)
-    NSFileManager* manager = [NSFileManager defaultManager];
+	NSFileManager* manager = [NSFileManager defaultManager];
 	BOOL isDir = NO;
 	BOOL exists = [manager fileExistsAtPath:cr4Dir isDirectory:&isDir];
 	if (!exists || !isDir)
@@ -76,8 +76,8 @@
 	//create new file:
 	NSDictionary<NSFileAttributeKey, id>* attributes = @{
 		NSFilePosixPermissions : @0666,
-        NSFileOwnerAccountName : @"mobile",
-        NSFileGroupOwnerAccountName : @"mobile"
+		NSFileOwnerAccountName : @"mobile",
+		NSFileGroupOwnerAccountName : @"mobile"
 	};
 	NSData* contentsData = [str dataUsingEncoding:NSUTF8StringEncoding];
 	[manager createFileAtPath:path contents:contentsData attributes:attributes];
@@ -88,35 +88,35 @@
 {
 	NSDictionary<NSFileAttributeKey, id>* attributes = @{
 		NSFilePosixPermissions : @0755,
-        NSFileOwnerAccountName : @"mobile",
-        NSFileGroupOwnerAccountName : @"mobile"
+		NSFileOwnerAccountName : @"mobile",
+		NSFileGroupOwnerAccountName : @"mobile"
 	};
-    return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:attributes error:NULL];
+	return [[NSFileManager defaultManager] createDirectoryAtURL:[NSURL fileURLWithPath:path] withIntermediateDirectories:YES attributes:attributes error:NULL];
 }
 
 -(void)sendNotification:(NSDictionary*)userInfo
 {
-    NSString* content = userInfo[@"content"];
+	NSString* content = userInfo[@"content"];
 	NSString* bundleID = @"com.muirey03.cr4shedgui";
 	NSString* title = @"Cr4shed";
-    NSDictionary* notifUserInfo = userInfo[@"userInfo"];
-    [CPNotification showAlertWithTitle:title
-                                message:content
-                                userInfo:notifUserInfo
-                                badgeCount:1
-                                soundName:nil
-                                delay:0.
-                                repeats:NO
-                                bundleId:bundleID];
+	NSDictionary* notifUserInfo = userInfo[@"userInfo"];
+	[CPNotification showAlertWithTitle:title
+								message:content
+								userInfo:notifUserInfo
+								badgeCount:1
+								soundName:nil
+								delay:0.
+								repeats:NO
+								bundleId:bundleID];
 }
 
 -(NSDictionary*)stringFromTime:(NSDictionary*)userInfo
 {
-    time_t t = (time_t)[userInfo[@"time"] integerValue];
-    CR4DateFormat type = (CR4DateFormat)[userInfo[@"type"] integerValue];
-    NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
-    NSString* ret = stringFromDate(date, type);
-    return ret ? @{@"ret" : ret} : @{};
+	time_t t = (time_t)[userInfo[@"time"] integerValue];
+	CR4DateFormat type = (CR4DateFormat)[userInfo[@"type"] integerValue];
+	NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
+	NSString* ret = stringFromDate(date, type);
+	return ret ? @{@"ret" : ret} : @{};
 }
 @end
 

@@ -23,7 +23,7 @@
 -(NSString*)dateName
 {
 	NSArray<NSString*>* comp = [[_path lastPathComponent] componentsSeparatedByString:@"@"];
-    return comp.count > 1 ? comp[1] : comp[0];
+	return comp.count > 1 ? comp[1] : comp[0];
 }
 
 -(NSString*)processName
@@ -32,7 +32,7 @@
 	if (info[@"ProcessName"])
 		return info[@"ProcessName"];
 	NSArray<NSString*>* comp = [[_path lastPathComponent] componentsSeparatedByString:@"@"];
-    return comp.count ? comp[0] : nil;
+	return comp.count ? comp[0] : nil;
 }
 
 -(NSString*)contents
