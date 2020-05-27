@@ -6,6 +6,7 @@ struct exception_info
 	NSString* processName;
 	NSString* bundleID;
 	NSString* exception_type;
+	NSString* swiftErrorMessage;
 	const char* exception_subtype;
 	const char* vm_info;
 	uint64_t thread_num;
@@ -34,4 +35,5 @@ struct exception_info
 -(void)decodeBacktraceWithBlock:(void(^)(NSInteger, id))arg1;
 -(NSDictionary*)binaryImageDictionaryForAddress:(uint64_t)addr;
 -(void)generateCr4shedReport;
+-(NSString*)_readStringAtTaskAddress:(mach_vm_address_t)addr immutableOnly:(BOOL)imut maxLength:(NSUInteger)maxLen;
 @end

@@ -21,6 +21,18 @@ struct register_info
 	uint64_t value;
 };
 
+struct crashreporter_annotations_t
+{
+	uint64_t version;
+	char* message;
+	uint64_t signature_string;
+	uint64_t backtrace;
+	char* message2;
+	uint64_t thread;
+	uint64_t dialog_mode;
+	uint64_t abort_cause;
+};
+
 NSString* mach_exception_string(exception_type_t exception, NSString* signalName);
 const char* mach_code_string(exception_type_t type, mach_exception_data_t codes, mach_msg_type_number_t codeCnt);
 char* mach_exception_codes_string(mach_exception_data_t codes, mach_msg_type_number_t codeCnt);
@@ -33,6 +45,7 @@ void freeThreadArray(thread_act_port_array_t threads, mach_msg_type_number_t thr
 BOOL createDir(NSString* path);
 void writeStringToFile(NSString* str, NSString* path);
 NSString* stringFromTime(time_t time, CR4DateFormat type);
+mach_vm_address_t findSymbolInTask(mach_port_t task, const char* symbolName, NSString* lastPathComponent, NSString** imageName);
 template <typename Type>
 static inline Type CR4GetIvar(id self, const char* name)
 {

@@ -126,7 +126,39 @@
 		info->thread_num = threadNum;
 		info->thread_name = threadNames.count > threadNum ? threadNames[threadNum] : nil;
 		info->register_info = get_register_info(thread);
-		
+
+		//get annotation:
+		NSString* libSwiftPath = nil;
+		mach_vm_address_t staticAnnotationAddr = findSymbolInTask(task, "_gCRAnnotations", @"libswiftCore.dylib", &libSwiftPath);
+		NSString* swiftErrorMessage = nil;
+		if (staticAnnotationAddr && libSwiftPath.length)
+		{
+			NSArray* images = CR4GetIvar<NSArray*>(self, "_binaryImages");
+			mach_vm_address_t annotationAddr = 0;
+			for (NSDictionary* img in images)
+			{
+				if ([img[@"ExecutablePath"] isEqualToString:libSwiftPath])
+				{
+					uint64_t start = [img[@"StartAddress"] unsignedLongLongValue];
+					annotationAddr = staticAnnotationAddr + start;
+					break;
+				}
+			}
+
+			if (annotationAddr)
+			{
+				mach_vm_address_t msgAddr = 0;
+				rread(task, annotationAddr + offsetof(crashreporter_annotations_t, message), &msgAddr, sizeof(mach_vm_address_t));
+				if (msgAddr)
+				{
+					swiftErrorMessage = [self _readStringAtTaskAddress:msgAddr immutableOnly:NO maxLength:0];
+					if ([swiftErrorMessage hasSuffix:@"\n"])
+						swiftErrorMessage = [swiftErrorMessage substringWithRange:NSMakeRange(0, swiftErrorMessage.length - 1)];
+				}
+			}
+		}
+		info->swiftErrorMessage = swiftErrorMessage;
+
 		//get unsymbolicated backtrace:
 		__block NSMutableArray* callStackSymbols = nil;
 		__block NSInteger i = 0;
@@ -224,6 +256,8 @@
 								info->exception_subtype,
 								info->exception_codes,
 								culprit];
+		if (info->swiftErrorMessage)
+			[logStr appendFormat:@"Swift Error Message: %@\n", info->swiftErrorMessage];
 		if (info->vm_info)
 			[logStr appendFormat:@"VM Protection: %s\n", info->vm_info];
 		if (terminationReason.length)

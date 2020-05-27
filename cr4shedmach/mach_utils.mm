@@ -2,6 +2,7 @@
 @import Foundation;
 
 #import "mach_utils.h"
+#import "symbolication.h"
 #include <stdlib.h>
 #include <string.h>
 #include <MRYIPCCenter.h>
@@ -296,4 +297,44 @@ NSString* stringFromTime(time_t t, CR4DateFormat type)
 		str = stringFromDate(date, type);
 	}
 	return str;
+}
+
+mach_vm_address_t findSymbolInTask(mach_port_t task, const char* symbolName, NSString* lastPathComponent, NSString** imageName)
+{
+	CSSymbolicatorRef symbolicator = CSSymbolicatorCreateWithTask(task);
+	if (CSIsNull(symbolicator))
+		return 0;
+	
+	__block mach_vm_address_t addr = 0;
+	__block NSString* imagePath = nil;
+	CSSymbolicatorForeachSymbolAtTime(symbolicator, kCSNow, ^int(CSSymbolRef symbol){
+		if (!CSIsNull(symbol))
+		{
+			const char* name = CSSymbolGetMangledName(symbol);
+			if (name && symbolName)
+			{
+				if (strcmp(name, symbolName) == 0)
+				{
+					mach_vm_address_t symAddr = CSSymbolGetRange(symbol).location;
+					CSSymbolOwnerRef owner = CSSymbolGetSymbolOwner(symbol);
+					if (!CSIsNull(owner))
+					{
+						const char* c_path = CSSymbolOwnerGetPath(owner);
+						NSString* path = c_path ? @(c_path) : nil;
+						if ([path.lastPathComponent isEqualToString:lastPathComponent])
+						{
+							addr = symAddr - CSSymbolOwnerGetBaseAddress(owner);
+							imagePath = path;
+							return 0;
+						}
+					}
+				}
+			}
+		}
+		return 1;
+	});
+	CSRelease(symbolicator);
+	if (imageName)
+		*imageName = imagePath;
+	return addr;
 }
