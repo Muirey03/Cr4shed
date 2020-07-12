@@ -52,18 +52,16 @@ NSString* nameForLocalSymbol(NSNumber* addrNum, uint64_t* outOffset)
 			CSSymbolOwnerRef owner = CSSymbolicatorGetSymbolOwnerWithAddressAtTime(symbolicator, (vm_address_t)symAddr, kCSNow);
 			if (!CSIsNull(owner))
 			{
-				uint64_t base = CSSymbolOwnerGetBaseAddress(owner);
 				uint64_t imgAddr = (uint64_t)info.dli_fbase;
-				uint64_t symOffset = (uint64_t)symAddr - imgAddr + base;
 				if (outOffset) *outOffset = (uint64_t)symAddr - imgAddr;
-				CSSymbolRef symbol = CSSymbolOwnerGetSymbolWithAddress(owner, symOffset);
+				CSSymbolRef symbol = CSSymbolOwnerGetSymbolWithAddress(owner, (mach_vm_address_t)symAddr);
 				if (!CSIsNull(symbol))
 				{
 					const char* c_name = CSSymbolGetName(symbol);
 					if (c_name)
 						name = [NSString stringWithUTF8String:c_name];
 					else
-						name = [NSString stringWithFormat:@"func_%llx", CSSymbolGetRange(symbol).location];
+						name = [NSString stringWithFormat:@"func_%llx", CSSymbolGetRange(symbol).location - imgAddr];
 				}
 			}
 			CSRelease(symbolicator);
@@ -75,18 +73,29 @@ NSString* nameForLocalSymbol(NSNumber* addrNum, uint64_t* outOffset)
 NSArray* symbolicatedStackSymbols(NSArray* callStackSymbols, NSArray* callStackReturnAddresses)
 {
 	NSMutableArray* symArr = [callStackSymbols mutableCopy];
-	for (int i = 0; i < callStackSymbols.count; i++)
+	for (uint32_t i = 0; i < callStackSymbols.count; i++)
 	{
 		uint64_t offset = 0;
 		NSString* symName = nameForLocalSymbol(callStackReturnAddresses[i], &offset);
-		if (symName)
+		if (symName && symName.length)
 		{
-			NSMutableArray* components = [[symArr[i] componentsSeparatedByString:@" "] mutableCopy];
-			for (int b = 0; b < 3; b++)
+			NSMutableArray<NSString*>* components = [[symArr[i] componentsSeparatedByString:@" "] mutableCopy];
+			NSMutableArray<NSString*>* newComponents = [[NSMutableArray alloc] initWithCapacity:3];
+			for (uint32_t b = 0; b < components.count; b++)
 			{
-				[components removeObjectAtIndex:(components.count - 1)];
+				if (components[b].length)
+				{
+					[newComponents addObject:components[b]];
+					if (newComponents.count >= 3)
+						break;
+				}
 			}
-			NSString* newSym = [components componentsJoinedByString:@" "];
+			if (newComponents.count < 3)
+				continue;
+			NSString* newSym = [newComponents[0] stringByPaddingToLength:4 withString:@" " startingAtIndex:0];
+			newSym = [newSym stringByAppendingString:newComponents[1]];
+			newSym = [newSym stringByPaddingToLength:40 withString:@" " startingAtIndex:0];
+			newSym = [newSym stringByAppendingString:newComponents[2]];
 			NSUInteger padding = newSym.length + 30;
 			newSym = [NSString stringWithFormat:@"%@ 0x%llx + 0x%llx", newSym, [callStackReturnAddresses[i] unsignedLongLongValue] - offset, offset];
 			newSym = [newSym stringByPaddingToLength:padding withString:@" " startingAtIndex:0];

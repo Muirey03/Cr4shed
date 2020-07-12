@@ -65,7 +65,7 @@
 	NSArray* activityItems = @[logMessage];
 	UIActivityViewController* activityViewControntroller = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
 	activityViewControntroller.excludedActivityTypes = @[];
-	if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+	if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
 		activityViewControntroller.popoverPresentationController.sourceView = self.view;
 		activityViewControntroller.popoverPresentationController.sourceRect = CGRectMake(self.view.bounds.size.width/2, self.view.bounds.size.height/4, 0, 0);
 	}
