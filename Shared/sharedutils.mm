@@ -131,6 +131,37 @@ size_t rwrite(mach_port_t task, mach_vm_address_t where, const void* p, size_t s
 	return offset;
 }
 
+char* rread_string(mach_port_t task, vm_address_t addr)
+{
+	const size_t batchSz = 8;
+	char* str = NULL;
+	size_t sz = 0;
+	for (;;)
+	{
+		str = (char*)realloc((void*)str, sz + batchSz);
+		char* cursor = &str[sz];
+		rread(task, addr + sz, (void*)cursor, batchSz);
+		if (strnlen(cursor, batchSz) != batchSz)
+			break;
+		sz += batchSz;
+	}
+	return str;
+}
+
+uint64_t rread64(mach_port_t task, mach_vm_address_t where)
+{
+	uint64_t val;
+	rread(task, where, (void*)&val, sizeof(val));
+	return val;
+}
+
+uint32_t rread32(mach_port_t task, mach_vm_address_t where)
+{
+	uint32_t val;
+	rread(task, where, (void*)&val, sizeof(val));
+	return val;
+}
+
 mach_vm_address_t taskGetImageInfos(mach_port_t task)
 {
 	struct task_dyld_info dyld_info = {0};
