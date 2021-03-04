@@ -11,6 +11,8 @@
 #import "cr4shed_mach.h"
 #import "mach_utils.h"
 
+#import <RemoteLog.h>
+
 %hook CrashReport
 %property (nonatomic, assign) time_t crashTime;
 %property (nonatomic, assign) uint64_t __far;
@@ -56,6 +58,8 @@
 
 	if ((self = %orig))
 	{
+		#define self ((CrashReport*)self)
+
 		self.crashTime = crashTime;
 		self.__far = far;
 		if (realThread == MACH_PORT_NULL)
@@ -63,6 +67,8 @@
 		self.realThread = realThread;
 		self.realCrashedNumber = thread_number(task, realThread);
 		self.exceptionInfo = NULL;
+		
+		#undef self
 	}
 	return self;
 }
@@ -70,14 +76,19 @@
 %new
 -(BOOL)cr4_isExceptionNonFatal
 {
+	#define self ((CrashReport*)self)
+
 	if ([self respondsToSelector:@selector(isExceptionNonFatal)])
 		return [self isExceptionNonFatal];
 	return (!CR4GetIvar<void*>(self, "_exit_snapshot") && CR4GetIvar<mach_exception_data_t>(self, "_exceptionCode")[0] >> 58 != 10);
+
+	#undef self
 }
 
 //responsible for gathering the exception info
 -(void)loadBundleInfo
 {
+	#define self ((CrashReport*)self)
 	%orig;
 
 	//more work to fix ReportCrash's bug:
@@ -215,12 +226,16 @@
 		if (exception_codes)
 			free((void*)exception_codes);
 	}
+
+	#undef self
 }
 
 //responsible for creating the report
 %new
 -(void)generateCr4shedReport
 {
+	#define self ((CrashReport*)self)
+
 	if (self.exceptionInfo)
 	{
 		struct exception_info* info = self.exceptionInfo;
@@ -359,17 +374,48 @@
 		free(self.exceptionInfo);
 		self.exceptionInfo = NULL;
 	}
+
+	#undef self
 }
 
 -(void)generateLogAtLevel:(BOOL)arg1 withBlock:(id)arg2
 {
 	%orig;
-	[self generateCr4shedReport];
+	[(CrashReport*)self generateCr4shedReport];
 }
 
 -(void)generateCustomLogAtLevel:(BOOL)arg1 withBlock:(id)arg2
 {
 	%orig;
-	[self generateCr4shedReport];
+	[(CrashReport*)self generateCr4shedReport];
 }
 %end
+
+%ctor
+{
+	Class crashReportCls = %c(CrashReport);
+	int numClasses = objc_getClassList(NULL, 0);
+	if (numClasses)
+	{
+		Class* classes = (Class*)malloc(sizeof(Class) * numClasses);
+		numClasses = objc_getClassList(classes, numClasses);
+
+		for (uint i = 0; i < numClasses; i++)
+		{
+			Class cls = classes[i];
+			if (strcmp(class_getName(cls), "CrashReport") == 0)
+			{
+				NSBundle* bundle = [NSBundle bundleForClass:cls];
+				if ([bundle.bundleIdentifier isEqualToString:@"com.apple.CrashReporter"])
+				{
+					crashReportCls = cls;
+					break;
+				}
+			}
+		}
+
+		free((void*)classes);
+	}
+
+	%init(CrashReport = crashReportCls);
+}
