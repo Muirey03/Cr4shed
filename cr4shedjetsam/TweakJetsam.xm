@@ -74,8 +74,8 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 	kern_return_t kr = task_info(task, TASK_BASIC_INFO, (task_info_t)&taskInfo, &count);
 	if (kr == KERN_SUCCESS)
 	{
-		[memoryInfo appendFormat:@"Virtual memory size: 0x%zx bytes\n", taskInfo.virtual_size];
-		[memoryInfo appendFormat:@"Resident memory size: 0x%zx bytes\n", taskInfo.resident_size];
+		[memoryInfo appendFormat:@"Virtual memory size: 0x%zx bytes\n", (size_t)taskInfo.virtual_size];
+		[memoryInfo appendFormat:@"Resident memory size: 0x%zx bytes\n", (size_t)taskInfo.resident_size];
 		
 		thread_act_array_t threads = NULL;
 		mach_msg_type_number_t threadCount = 0;

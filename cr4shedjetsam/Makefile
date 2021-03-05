@@ -8,6 +8,6 @@ Cr4shedJetsam_CFLAGS = -fobjc-arc -I../Include -Wno-unused-variable
 Cr4shedJetsam_LDFLAGS += -F../Frameworks/ -L../Libraries/
 Cr4shedJetsam_FRAMEWORKS = CoreSymbolication
 Cr4shedJetsam_LIBRARIES = MobileGestalt notifications mryipc
-ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN
+ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN -fmodules
 
 include $(THEOS_MAKE_PATH)/tweak.mk
