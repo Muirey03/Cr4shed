@@ -122,5 +122,5 @@ resourceExceptionFromLogFileHandle:error: (@32@0:8@16^@24)
 -(NSString*)prettyPrintBinaryImages;
 //new
 -(void)generateCr4shedReport;
--(NSString*)fetchClassInfo;
+-(NSString*)fetchMemoryInfo;
 @end

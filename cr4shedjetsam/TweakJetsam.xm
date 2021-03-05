@@ -6,39 +6,11 @@
 #import "../cr4shedmach/mach_utils.h"
 #import "cr4shed_jetsam.h"
 
-#define ISA_MASK 0x0000000ffffffff8ULL
-#define ISA_MAGIC_MASK 0x000003f000000001ULL
-#define ISA_MAGIC_VALUE 0x000001a000000001ULL
-
 static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
 	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
 	NSDictionary* reply = [ipcCenter callExternalMethod:@selector(writeString:) withArguments:@{@"string" : str, @"filename" : filename}];
 	return reply[@"path"];
-}
-
-char* classNameForClass(mach_port_t task, vm_address_t clsAddr)
-{
-	vm_address_t classRWAddr = rread64(task, clsAddr + 0x20) & 0x7FFFFFFFFFF8;
-	if (!classRWAddr)
-		return NULL;
-
-	vm_address_t ro_or_rw_ext = rread64(task, classRWAddr + 8);
-	uintptr_t tag = ro_or_rw_ext & 1;
-
-	vm_address_t classROAddr = ro_or_rw_ext;
-	if (tag == 1)
-	{
-		vm_address_t classRWExtAddr = ro_or_rw_ext & ~1;
-		if (!classRWExtAddr)
-			return NULL;
-		classROAddr = rread64(task, classRWExtAddr);
-	}
-	if (!classROAddr)
-		return NULL;
-	
-	vm_address_t nameAddr = rread64(task, classROAddr + 0x18);
-	return rread_string(task, nameAddr);
 }
 
 %hook MemoryResourceException
@@ -61,16 +33,16 @@ char* classNameForClass(mach_port_t task, vm_address_t clsAddr)
 																@"Process: %@\n"
 																@"Bundle id: %@\n"
 																@"Device: %@\n\n"
-																@"Uptime: %llds\n"
-																@"Reason: %@\n",
+																@"Reason: %@\n"
+																@"Uptime: %llds\n",
 																dateString,
 																self.execName,
 																self.bundleID,
 																device,
-																(long long)self.upTime,
-																reason];
+																reason,
+																(long long)self.upTime];
 
-	[logStr appendFormat:@"\nClass info:\n%@", [self fetchClassInfo]];
+	[logStr appendFormat:@"%@", [self fetchMemoryInfo]];
 	if ([logStr characterAtIndex:logStr.length - 1] != '\n')
 		[logStr appendString:@"\n"];
 	[logStr appendFormat:@"\n%@", [self prettyPrintBinaryImages]];
@@ -93,89 +65,43 @@ char* classNameForClass(mach_port_t task, vm_address_t clsAddr)
 }
 
 %new
--(NSString*)fetchClassInfo
+-(NSString*)fetchMemoryInfo
 {
+	NSMutableString* memoryInfo = [NSMutableString new];
 	mach_port_t task = self.task;
-
-	static std::vector<void*> needFree;
-	memory_reader_t* reader = [](task_t task, vm_address_t address, vm_size_t size, void** ptr){
-		void* local = malloc(size);
-		needFree.push_back(local);
-		rread(task, address, local, size);
-		*ptr = local;
-		return 0;
-	};
-	auto cleanup = [](void){
-		for (void* buffer : needFree)
-			free(buffer);
-		needFree.clear();
-	};
-
-	static NSMutableDictionary* objectMap;
-	objectMap = [NSMutableDictionary new];
-	vm_range_recorder_t* recorder = [](task_t task, void *context, unsigned type, vm_range_t *ranges, unsigned rangeCount){
-		for (unsigned i = 0; i < rangeCount; i++)
-		{
-			vm_range_t range = ranges[i];
-			vm_address_t potentialObj = range.address;
-			uint64_t isa = rread64(task, potentialObj + offsetof(struct objc_object, isa));
-			if ((isa & 0xFFFF800000000000) == 0 && (isa & ISA_MAGIC_MASK) == ISA_MAGIC_VALUE && (isa & ISA_MASK) != 0)
-			{
-				vm_address_t cls = isa & ISA_MASK;
-				objectMap[@(cls)] = @([objectMap[@(cls)] unsignedLongLongValue] + 1);
-			}
-		}
-	};
-
-	unsigned zoneCount = 0;
-	vm_address_t* zones;
-	kern_return_t kr = malloc_get_all_zones(task, reader, &zones, &zoneCount);
+	struct task_basic_info taskInfo;
+	mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
+	kern_return_t kr = task_info(task, TASK_BASIC_INFO, (task_info_t)&taskInfo, &count);
 	if (kr == KERN_SUCCESS)
 	{
-		for (unsigned i = 0; i < zoneCount; i++)
+		[memoryInfo appendFormat:@"Virtual memory size: 0x%zx bytes\n", taskInfo.virtual_size];
+		[memoryInfo appendFormat:@"Resident memory size: 0x%zx bytes\n", taskInfo.resident_size];
+		
+		thread_act_array_t threads = NULL;
+		mach_msg_type_number_t threadCount = 0;
+		kr = task_threads(task, &threads, &threadCount);
+		if (kr == KERN_SUCCESS)
 		{
-			vm_address_t zone = zones[i];
-			vm_address_t zone_name_addr = rread64(task, zone + offsetof(malloc_zone_t, zone_name));
-			char* zone_name = NULL;
-			if (zone_name_addr)
-				zone_name = rread_string(task, zone_name_addr);
-			
-			//only inspect DefaultMallocZone
-			if (!zone_name || strcmp(zone_name, "DefaultMallocZone") != 0)
-				continue;
+			uint32_t cpuUsage = 0;
+			for (uint i = 0; i < threadCount; i++)
+			{
+				struct thread_basic_info threadInfo;
+				count = THREAD_BASIC_INFO_COUNT;
+				kr = thread_info(threads[i], THREAD_BASIC_INFO, (thread_info_t)&threadInfo, &count);
+				if (kr == KERN_SUCCESS)
+				{
+					cpuUsage += threadInfo.cpu_usage;
+				}
 
-			vm_address_t introspect = rread64(task, zone + offsetof(malloc_zone_t, introspect));
-			kern_return_t(*enumerator)(task_t, void*, unsigned, vm_address_t, memory_reader_t, vm_range_recorder_t);
-			enumerator = (__typeof enumerator)rread64(task, introspect + offsetof(malloc_introspection_t, enumerator));
-			if (enumerator)
-				enumerator(task, (void*)zone_name, MALLOC_PTR_IN_USE_RANGE_TYPE, zone, reader, recorder);
-			
-			if (zone_name)
-				free((void*)zone_name);
-			break;
+				mach_port_deallocate(mach_task_self(), threads[i]);
+			}
+
+			vm_deallocate(mach_task_self(), (vm_address_t)threads, sizeof(*threads) * threadCount);
+
+			[memoryInfo appendFormat:@"CPU usage: %u%%\n", cpuUsage];
+			[memoryInfo appendFormat:@"Thread count: %u\n", threadCount];
 		}
 	}
-
-	//free memory allocated by `reader`
-	cleanup();
-
-	NSMutableString* classInfo = [NSMutableString new];
-	NSArray* sortedClasses = [objectMap.allKeys sortedArrayUsingComparator:^(id obj1, id obj2) {
-		NSUInteger n = [objectMap[obj1] unsignedIntegerValue];
-		NSUInteger m = [objectMap[obj2] unsignedIntegerValue];
-		return [@(m) compare:@(n)];
-	}];
-	for (uint32_t i = 0; i < sortedClasses.count && i < 20; i++)
-	{
-		vm_address_t clsAddr = [sortedClasses[i] unsignedLongLongValue];
-		char* clsName = classNameForClass(task, clsAddr);	
-
-		if (clsName && strlen(clsName))
-			[classInfo appendFormat:@"%s [%llu]\n", clsName, [objectMap[sortedClasses[i]] unsignedLongLongValue]];
-		
-		if (clsName)
-			free((void*)clsName);
-	}
-	return classInfo;
+	return memoryInfo;
 }
 %end
