@@ -11,8 +11,6 @@
 #import "cr4shed_mach.h"
 #import "mach_utils.h"
 
-#import <RemoteLog.h>
-
 %hook CrashReport
 %property (nonatomic, assign) time_t crashTime;
 %property (nonatomic, assign) uint64_t __far;
