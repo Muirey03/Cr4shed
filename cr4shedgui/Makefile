@@ -9,7 +9,7 @@ Cr4shed_LIBRARIES = MobileGestalt
 Cr4shed_FRAMEWORKS = UIKit CoreGraphics WebKit UserNotifications FRPreferences Cephei MessageUI
 Cr4shed_CFLAGS = -fobjc-arc -I../Frameworks -I../Include -Wno-deprecated-declarations
 Cr4shed_CODESIGN_FLAGS = -Sent.xml
-ADDITIONAL_CFLAGS = -Wno-unguarded-availability -fmodules
+ADDITIONAL_CFLAGS = -Wno-unguarded-availability
 
 include $(THEOS_MAKE_PATH)/application.mk
 
