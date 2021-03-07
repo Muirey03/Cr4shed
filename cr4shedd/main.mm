@@ -39,6 +39,7 @@
 		[_ipcCenter addTarget:self action:@selector(writeString:)];
 		[_ipcCenter addTarget:self action:@selector(sendNotification:)];
 		[_ipcCenter addTarget:self action:@selector(stringFromTime:)];
+		[_ipcCenter addTarget:self action:@selector(isProcessBlacklisted:)];
 	}
 	return self;
 }
@@ -117,6 +118,11 @@
 	NSDate* date = [NSDate dateWithTimeIntervalSince1970:t];
 	NSString* ret = stringFromDate(date, type);
 	return ret ? @{@"ret" : ret} : @{};
+}
+
+-(NSNumber*)isProcessBlacklisted:(NSString*)procName
+{
+	return @(isBlacklisted(procName));
 }
 @end
 

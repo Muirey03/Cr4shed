@@ -1,6 +1,4 @@
 @import Foundation;
-#include <malloc/malloc.h>
-#include <vector>
 #import <sharedutils.h>
 #import <MRYIPCCenter.h>
 #import "../cr4shedmach/mach_utils.h"
@@ -17,8 +15,13 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 -(BOOL)extractCorpseInfo
 {
 	BOOL ret = %orig;
-	[self extractBacktraceInfo];
-	[self generateCr4shedReport];
+	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+	NSNumber* blacklistedBool = [ipcCenter callExternalMethod:@selector(isProcessBlacklisted:) withArguments:self.execName];
+	if (!blacklistedBool.boolValue)
+	{
+		[self extractBacktraceInfo];
+		[self generateCr4shedReport];
+	}
 	return ret;
 }
 
