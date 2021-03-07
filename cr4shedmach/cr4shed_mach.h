@@ -28,6 +28,7 @@ struct exception_info
 @property (nonatomic, assign) struct exception_info* exceptionInfo;
 @property (nonatomic, assign) mach_port_t realThread;
 @property (nonatomic, assign) int realCrashedNumber;
+@property (nonatomic, assign) BOOL hasBeenHandled;
 -(BOOL)isExceptionNonFatal;
 -(BOOL)cr4_isExceptionNonFatal;
 -(NSString*)signalName;

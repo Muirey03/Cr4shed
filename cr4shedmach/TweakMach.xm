@@ -17,6 +17,7 @@
 %property (nonatomic, assign) struct exception_info* exceptionInfo;
 %property (nonatomic, assign) mach_port_t realThread;
 %property (nonatomic, assign) int realCrashedNumber;
+%property (nonatomic, assign) BOOL hasBeenHandled;
 
 //does any work that must be done before the process dies
 //namely, finding the correct crashed thread and state
@@ -58,6 +59,7 @@
 	{
 		#define self ((CrashReport*)self)
 
+		self.hasBeenHandled = processHasBeenHandled(task);
 		self.crashTime = crashTime;
 		self.__far = far;
 		if (realThread == MACH_PORT_NULL)
@@ -89,6 +91,10 @@
 	#define self ((CrashReport*)self)
 	%orig;
 
+	//don't create report if cr4shed already generated an NSException report
+	if (self.hasBeenHandled)
+		return;
+
 	//more work to fix ReportCrash's bug:
 	exception_type_t exception = CR4GetIvar<exception_type_t>(self, "_exceptionType");
 	mach_exception_data_t old_exception_codes = CR4GetIvar<mach_exception_data_t>(self, "_exceptionCode");
@@ -102,8 +108,7 @@
 	int threadNum = CR4GetIvar<int>(self, "_crashedThreadNumber");
 	int sig = CR4GetIvar<int>(self, "_signal");
 	
-	//don't create report if cr4shed already generated an NSException report
-	if (processHasBeenHandled(task) || sig == 0 || sig == SIGKILL || isBlacklisted(self.procName))
+	if (sig == 0 || sig == SIGKILL || isBlacklisted(self.procName))
 		return;
 	
 	mach_exception_data_type_t subtype = 0;
@@ -233,6 +238,9 @@
 -(void)generateCr4shedReport
 {
 	#define self ((CrashReport*)self)
+
+	if (self.hasBeenHandled)
+		return;
 
 	if (self.exceptionInfo)
 	{
