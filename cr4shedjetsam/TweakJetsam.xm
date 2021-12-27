@@ -16,12 +16,20 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
 	BOOL ret = %orig;
 	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
+	
+	BOOL shouldLogJetsam = [[ipcCenter callExternalMethod:@selector(shouldLogJetsam) withArguments:@{}] boolValue];
+	if (!shouldLogJetsam)
+	{
+		return ret;
+	}
+	
 	NSNumber* blacklistedBool = [ipcCenter callExternalMethod:@selector(isProcessBlacklisted:) withArguments:self.execName];
 	if (!blacklistedBool.boolValue)
 	{
 		[self extractBacktraceInfo];
 		[self generateCr4shedReport];
 	}
+	
 	return ret;
 }
 

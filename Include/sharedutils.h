@@ -5,6 +5,7 @@
 #define CR4BlacklistDidChangeNotificationName @"com.muirey03.cr4shed-blacklistDidChange"
 #define kSortingMethod @"SortingMethod"
 #define kProcessBlacklist @"ProcessBlacklist"
+#define kEnableJetsam @"EnableJetsam"
 
 typedef NS_ENUM(NSInteger, CR4DateFormat)
 {
@@ -39,5 +40,6 @@ NSDictionary* getInfoFromLog(NSString* logContents);
 }
 
 bool isBlacklisted(NSString* procName = nil);
+bool wantsLogJetsam();
 void lazyLoadBundle(NSString* const bundlePath);
 #endif

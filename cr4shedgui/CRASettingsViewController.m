@@ -24,18 +24,29 @@ void openURL(NSString* urlStr)
 
 	//main section:
 	FRPSection* mainSection = [FRPSection sectionWithTitle:@"General" footer:@""];
-	FRPSegmentCell* segmentCell = [FRPSegmentCell   cellWithTitle:@"Process sorting method"
-													setting:[FRPSettings settingsWithKey:kSortingMethod defaultValue:@"Date"]
-													values:@[@"Date", @"Name"]
-													displayedValues:@[@"Date", @"Name"]
-										   			postNotification:CR4ProcsNeedRefreshNotificationName
-													changeBlock:^(NSString* value) {
-														[settingsVC updatePrefsWithKey:kSortingMethod value:value];
-													}];
+	FRPSegmentCell* segmentCell = [FRPSegmentCell
+		cellWithTitle:@"Process sorting method"
+		setting:[FRPSettings settingsWithKey:kSortingMethod defaultValue:@"Date"]
+		values:@[@"Date", @"Name"]
+		displayedValues:@[@"Date", @"Name"]
+		postNotification:CR4ProcsNeedRefreshNotificationName
+		changeBlock:^(NSString* value) {
+			[settingsVC updatePrefsWithKey:kSortingMethod value:value];
+		}
+	];
 	[mainSection addCell:segmentCell];
 	[mainSection addCell:[FRPLinkCell cellWithTitle:@"Process blacklist" selectedBlock:^(id sender) {
 		[settingsVC.navigationController pushViewController:[CRABlacklistViewController new] animated:YES];
 	}]];
+	FRPSwitchCell* jetsamCell = [FRPSwitchCell
+		cellWithTitle:@"Log Jetsam Events"
+		setting:[FRPSettings settingsWithKey:kEnableJetsam defaultValue:@YES]
+		postNotification:CR4ProcsNeedRefreshNotificationName
+		changeBlock:^(UISwitch* sender) {
+			[settingsVC updatePrefsWithKey:kEnableJetsam value:@(sender.on)];
+		}
+	];
+	[mainSection addCell:jetsamCell];
 
 	//credits section
 	FRPSection* creditsSection = [FRPSection sectionWithTitle:@"Credits" footer:@""];
