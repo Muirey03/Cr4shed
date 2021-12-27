@@ -1,3 +1,4 @@
+#import <Foundation/Foundation.h>
 #include <mach/mach.h>
 
 #define CR4ProcsNeedRefreshNotificationName @"com.muirey03.cr4shed-procsNeedRefresh"

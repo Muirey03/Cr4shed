@@ -1,3 +1,4 @@
+@import UIKit;
 @import UserNotifications;
 
 @interface CRAAppDelegate : UIResponder <UIApplicationDelegate, UNUserNotificationCenterDelegate>

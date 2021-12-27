@@ -1,3 +1,5 @@
+@import UIKit;
+
 @interface CRABlacklistCell : UITableViewCell <UITextFieldDelegate>
 @property (nonatomic, readonly) UITextField* textField;
 @property (nonatomic, copy) void(^textChangedCallback)(NSString*);

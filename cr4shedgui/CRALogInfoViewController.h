@@ -1,4 +1,5 @@
 @import MessageUI;
+@import UIKit;
 @class Log;
 
 @interface UIImage (Internal)
