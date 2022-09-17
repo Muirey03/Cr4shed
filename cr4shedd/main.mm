@@ -124,6 +124,10 @@
 {
 	return @(isBlacklisted(procName));
 }
+
+-(NSNumber*)shouldLogJetsam {
+	return @(wantsLogJetsam());
+}
 @end
 
 int main(int argc, char** argv, char** envp)

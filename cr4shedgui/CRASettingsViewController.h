@@ -1,3 +1,4 @@
+@import UIKit;
 #import <FRPreferences.framework/Headers/FRPrefs.h>
 
 @interface FRPreferences (Internal)

@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+
 @interface Log : NSObject
 @property (nonatomic, readonly) NSString* path;
 @property (nonatomic, readonly) NSDate* date;

@@ -8,7 +8,7 @@ TWEAK_NAME = 0Cr4shed
 0Cr4shed_FRAMEWORKS = CoreSymbolication
 0Cr4shed_LIBRARIES = MobileGestalt mryipc
 0Cr4shed_LDFLAGS += -FFrameworks/ -LLibraries/
-ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN
+ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN -Wno-shorten-64-to-32
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
