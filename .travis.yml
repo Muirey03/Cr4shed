@@ -1,19 +1,18 @@
 os: osx
 language: objective-c
-osx_image: xcode10.1
+osx_image: xcode11.7
 sudo: false
 env:
   global:
   - THEOS=~/theos
 before_install:
 - brew update
-- brew install dpkg ldid
-- git clone --recursive git://github.com/theos/theos.git ~/theos
-- curl -o master.zip -sL https://github.com/SniperGER/iOS13-Private-SDK/archive/6e2595bcd6af34d5e04efee25fe9f166bccf01ea.zip
+- brew install dpkg ldid xz
+- git clone --recursive https://github.com/theos/theos.git $THEOS
+- curl -LO https://github.com/theos/sdks/archive/master.zip
 - TMP=$(mktemp -d)
-- unzip -qq master.zip -d $TMP
-- unzip -qq $TMP/iOS13-Private-SDK-*/sdks/iPhoneOS13.3.sdk.zip -d $TMP/iOS13-Private-SDK-*/sdks
-- mv $TMP/iOS13-Private-SDK-*/sdks/*.sdk $THEOS/sdks
+- unzip master.zip -d $TMP
+- mv $TMP/sdks-master/*.sdk $THEOS/sdks
 - rm -r master.zip $TMP
 - chmod 0775 ./layout/DEBIAN/postinst
 - chmod 0775 ./layout/DEBIAN/prerm
@@ -21,7 +20,7 @@ script:
 - make clean package FINALPACKAGE=1
 before_deploy:
 - git config --local user.name "Muirey03"
-- git config --local user.email "tommy.muir@btinternet.com"
+- git config --local user.email "tcmuir03@gmail.com"
 - export RELEASE_PKG_FILE=$(ls ./packages/*.deb)
 - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
 - git tag $TRAVIS_TAG

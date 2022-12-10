@@ -256,7 +256,7 @@ bool isBlacklisted(NSString* procName)
 
 bool wantsLogJetsam()
 {
-	return [sharedPreferences() objectForKey:kEnableJetsam] ?: @YES;
+	return [([sharedPreferences() objectForKey:kEnableJetsam] ?: @YES) boolValue];
 }
 
 void lazyLoadBundle(NSString* const bundlePath)

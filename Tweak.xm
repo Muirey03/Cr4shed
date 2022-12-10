@@ -5,6 +5,7 @@
 #import "symbolication.h"
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
+#import <dlfcn.h>
 
 @interface Cr4shedServer : NSObject
 + (id)sharedInstance;
