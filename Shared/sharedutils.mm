@@ -8,6 +8,8 @@
 #import <MobileGestalt/MobileGestalt.h>
 #import <sharedutils.h>
 #import <Cephei/HBPreferences.h>
+#import <libnotifications.h>
+#include <dlfcn.h>
 
 extern "C" {
 
@@ -264,4 +266,21 @@ void lazyLoadBundle(NSString* const bundlePath)
 	NSBundle* bundle = [NSBundle bundleWithPath:bundlePath];
 	if (!bundle.loaded)
 		[bundle load];
+}
+
+void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
+{
+	void* handle = dlopen("/usr/lib/libnotifications.dylib", RTLD_NOW);
+	if (handle) {
+		NSString* bundleID = @"com.muirey03.cr4shedgui";
+		NSString* title = @"Cr4shed";
+		[objc_getClass("CPNotification") showAlertWithTitle:title
+										message:notifContent
+										userInfo:notifUserInfo
+										badgeCount:1
+										soundName:nil
+										delay:0.
+										repeats:NO
+										bundleId:bundleID];
+	}
 }

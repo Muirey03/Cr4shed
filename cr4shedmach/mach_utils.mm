@@ -149,17 +149,12 @@ const char* mach_exception_vm_info(mach_port_t task, exception_type_t type, mach
 	return str;
 }
 
-std::vector<struct register_info> get_register_info(mach_port_t thread)
+std::vector<struct register_info> get_register_info(_CR4_THREAD_STATE64* thread_state)
 {
 	std::vector<struct register_info> info_vec;
 
-	//get thread state:
-	_CR4_THREAD_STATE64 thread_state = {{ 0 }};
-	mach_msg_type_number_t thread_stateCnt = ARM_THREAD_STATE64_COUNT;
-	thread_get_state(thread, ARM_THREAD_STATE64, (thread_state_t)&thread_state, &thread_stateCnt);
-
 	#define ADD_INFO(reg, name) do { \
-		struct register_info info = { strdup(name), thread_state.__##reg }; \
+		struct register_info info = { strdup(name), thread_state->__##reg }; \
 		info_vec.push_back(info); \
 	} while (false)
 

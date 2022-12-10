@@ -1,8 +1,8 @@
 #!/bin/sh
 echo "Killing ReportCrash..."
-killall ReportCrash 2> /dev/null
+killall -9 ReportCrash 2> /dev/null
 echo "Killing ReportMemoryException..."
-killall ReportMemoryException 2> /dev/null
+killall -9 ReportMemoryException 2> /dev/null
 echo "Starting cr4shedd..."
 chown root:wheel /usr/libexec/cr4shedd
 chmod 755 /usr/libexec/cr4shedd

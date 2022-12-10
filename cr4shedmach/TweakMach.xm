@@ -7,21 +7,52 @@
 #import <substrate.h>
 #import <symbolication.h>
 #import <sharedutils.h>
-#import <libnotifications.h>
 #import "cr4shed_mach.h"
 #import "mach_utils.h"
+
+NSDictionary* getImageInfo(OSABinaryImageSegment* img)
+{
+	if ([img isKindOfClass:[NSDictionary class]])
+		return (NSDictionary*)img;
+	if ([img respondsToSelector:@selector(symbolInfo)]) {
+		OSASymbolInfo* info = [img symbolInfo];
+		return @{
+			@"ExecutablePath" : info.path,
+			@"StartAddress" : @(info.start)
+		};
+	}
+	return nil;
+}
 
 %hook CrashReport
 %property (nonatomic, assign) time_t crashTime;
 %property (nonatomic, assign) uint64_t __far;
 %property (nonatomic, assign) struct exception_info* exceptionInfo;
-%property (nonatomic, assign) mach_port_t realThread;
 %property (nonatomic, assign) int realCrashedNumber;
 %property (nonatomic, assign) BOOL hasBeenHandled;
 
+-(instancetype)initWithTask:(mach_port_t)task exceptionType:(exception_type_t)exception thread:(mach_port_t)thread threadId:(NSUInteger)threadId threadStateFlavor:(int*)flavour threadState:(thread_state_t)old_state threadStateCount:(mach_msg_type_number_t)old_stateCnt
+{
+	if ((self = %orig))
+	{
+		[self cr4_sharedInitWithTask:task exceptionType:exception thread:thread threadStateFlavor:flavour threadState:old_state threadStateCount:old_stateCnt];
+	}
+	return self;
+}
+
+-(instancetype)initWithTask:(mach_port_t)task exceptionType:(exception_type_t)exception thread:(mach_port_t)thread threadStateFlavor:(int*)flavour threadState:(thread_state_t)old_state threadStateCount:(mach_msg_type_number_t)old_stateCnt
+{
+	if ((self = %orig))
+	{
+		[self cr4_sharedInitWithTask:task exceptionType:exception thread:thread threadStateFlavor:flavour threadState:old_state threadStateCount:old_stateCnt];
+	}
+	return self;
+}
+
 //does any work that must be done before the process dies
 //namely, finding the correct crashed thread and state
--(instancetype)initWithTask:(mach_port_t)task exceptionType:(exception_type_t)exception thread:(mach_port_t)thread threadStateFlavor:(int*)flavour threadState:(thread_state_t)old_state threadStateCount:(mach_msg_type_number_t)old_stateCnt
+%new
+-(void)cr4_sharedInitWithTask:(mach_port_t)task exceptionType:(exception_type_t)exception thread:(mach_port_t)thread threadStateFlavor:(int*)flavour threadState:(thread_state_t)old_state threadStateCount:(mach_msg_type_number_t)old_stateCnt
 {
 	/*
 	There is a bug in ReportCrash, this code is here to fix it.
@@ -38,39 +69,41 @@
 	time_t crashTime = time(NULL);
 	mach_port_t realThread = MACH_PORT_NULL;
 	uint64_t far = 0;
-	thread_act_port_array_t threads;
-	mach_msg_type_number_t thread_count;
-	task_threads(task, &threads, &thread_count);
-	for (unsigned i = 0; i < thread_count; i++)
-	{
-		_STRUCT_ARM_EXCEPTION_STATE64 state = {0};
-		mach_msg_type_number_t thread_stateCnt = ARM_EXCEPTION_STATE64_COUNT;
-		kern_return_t kr = thread_get_state(threads[i], ARM_EXCEPTION_STATE64, (thread_state_t)&state, &thread_stateCnt);
-		if (kr == KERN_SUCCESS && (state.__esr & 0xFC000000) != 0x54000000 && state.__esr != 0)
+
+	if (task != MACH_PORT_NULL) {
+		thread_act_port_array_t threads;
+		mach_msg_type_number_t thread_count;
+		task_threads(task, &threads, &thread_count);
+		for (unsigned i = 0; i < thread_count; i++)
 		{
-			realThread = threads[i];
-			far = state.__far;
-			break;
+			_STRUCT_ARM_EXCEPTION_STATE64 state = {0};
+			mach_msg_type_number_t thread_stateCnt = ARM_EXCEPTION_STATE64_COUNT;
+			kern_return_t kr = thread_get_state(threads[i], ARM_EXCEPTION_STATE64, (thread_state_t)&state, &thread_stateCnt);
+			if (kr == KERN_SUCCESS && (state.__esr & 0xFC000000) != 0x54000000 && state.__esr != 0)
+			{
+				realThread = threads[i];
+				far = state.__far;
+				break;
+			}
 		}
+		freeThreadArray(threads, thread_count);
 	}
-	freeThreadArray(threads, thread_count);
 
-	if ((self = %orig))
-	{
-		#define self ((CrashReport*)self)
+	#define self ((CrashReport*)self)
 
-		self.hasBeenHandled = processHasBeenHandled(task);
-		self.crashTime = crashTime;
-		self.__far = far;
-		if (realThread == MACH_PORT_NULL)
-			realThread = thread;
-		self.realThread = realThread;
+	self.hasBeenHandled = task ? processHasBeenHandled(task) : NO;
+	self.crashTime = crashTime;
+	self.__far = CR4IvarExists(self, "_crashingAddress") ? CR4GetIvar<NSUInteger>(self, "_crashingAddress") : far;
+	if (realThread == MACH_PORT_NULL)
+		realThread = thread;
+
+	if (task != MACH_PORT_NULL && realThread != MACH_PORT_NULL)
 		self.realCrashedNumber = thread_number(task, realThread);
-		self.exceptionInfo = NULL;
-		
-		#undef self
-	}
-	return self;
+	else
+		self.realCrashedNumber = -1;
+	self.exceptionInfo = NULL;
+
+	#undef self
 }
 
 %new
@@ -104,7 +137,6 @@
 	if (old_exception_codes)
 		memcpy(exception_codes, old_exception_codes, codeCnt * sizeof(mach_exception_data_type_t));
 	mach_port_t task = CR4GetIvar<mach_port_t>(self, "_task");
-	mach_port_t thread = CR4GetIvar<mach_port_t>(self, "_threadPort");
 	int threadNum = CR4GetIvar<int>(self, "_crashedThreadNumber");
 	int sig = CR4GetIvar<int>(self, "_signal");
 	
@@ -114,12 +146,11 @@
 	mach_exception_data_type_t subtype = 0;
 	exception = mach_exception_type(sig, &subtype);
 	exception_codes[0] = subtype;
-	if (exception == EXC_CORPSE_NOTIFY)
+	if (exception == EXC_CORPSE_NOTIFY && self.realCrashedNumber != -1)
 	{
 		exception_codes[1] = (mach_exception_data_type_t)self.__far;
 		if (exception == EXC_BAD_ACCESS)
 		{
-			thread = self.realThread;
 			threadNum = self.realCrashedNumber;
 		}
 	}
@@ -132,14 +163,31 @@
 		//get basic info from crash:
 		info->processName = self.procName;
 		info->bundleID = CR4GetIvar<NSString*>(self, "_bundle_id");
-		info->exception_type = mach_exception_string(exception, [self signalName]);
+		info->exception_type = mach_exception_string(exception, [self cr4_signalName:sig]);
 		info->exception_subtype = mach_code_string(exception, exception_codes, codeCnt);
 		info->exception_codes = mach_exception_codes_string(exception_codes, codeCnt);
 		info->vm_info = mach_exception_vm_info(task, exception, exception_codes, codeCnt);
-		NSArray* threadNames = CR4GetIvar<NSMutableArray*>(self, "_threadNames");
 		info->thread_num = threadNum;
-		info->thread_name = threadNames.count > threadNum ? threadNames[threadNum] : nil;
-		info->register_info = get_register_info(thread);
+
+		if (CR4IvarExists(self, "_threadNames"))
+		{
+			NSArray* threadNames = CR4GetIvar<NSMutableArray*>(self, "_threadNames");
+			info->thread_name = threadNames.count > threadNum ? threadNames[threadNum] : nil;
+		}
+		else if (CR4IvarExists(self, "_threadInfos"))
+		{
+			NSArray* threadInfos = CR4GetIvar<NSMutableArray*>(self, "_threadInfos");
+			NSDictionary* infoDict = threadInfos.count > threadNum ? threadInfos[threadNum] : nil;
+			info->thread_name = infoDict ? 
+				(infoDict[@"name"] ?: infoDict[@"queue"])
+				: nil;
+		}
+
+		info->register_info = std::vector<struct register_info>();
+		if (CR4IvarExists(self, "_threadState")) {
+			_CR4_THREAD_STATE64 thread_state = CR4GetIvar<_CR4_THREAD_STATE64>(self, "_threadState");
+			info->register_info = get_register_info(&thread_state);
+		}
 
 		//get annotation:
 		NSString* libSwiftPath = nil;
@@ -147,15 +195,24 @@
 		NSString* swiftErrorMessage = nil;
 		if (staticAnnotationAddr && libSwiftPath.length)
 		{
-			NSArray* images = CR4GetIvar<NSArray*>(self, "_binaryImages");
+			NSArray* images = nil;
+			if (CR4IvarExists(self, "_binaryImages"))
+				images = CR4GetIvar<NSArray*>(self, "_binaryImages");
+			else if (CR4IvarExists(self, "_taskImages"))
+				images = CR4GetIvar<NSArray*>(self, "_binaryImages");
+			
 			mach_vm_address_t annotationAddr = 0;
-			for (NSDictionary* img in images)
+			if (images)
 			{
-				if ([img[@"ExecutablePath"] isEqualToString:libSwiftPath])
+				for (OSABinaryImageSegment* img in images)
 				{
-					uint64_t start = [img[@"StartAddress"] unsignedLongLongValue];
-					annotationAddr = staticAnnotationAddr + start;
-					break;
+					NSDictionary* imgInfo = getImageInfo(img);
+					if ([imgInfo[@"ExecutablePath"] isEqualToString:libSwiftPath])
+					{
+						uint64_t start = [imgInfo[@"StartAddress"] unsignedLongLongValue];
+						annotationAddr = staticAnnotationAddr + start;
+						break;
+					}
 				}
 			}
 
@@ -165,8 +222,12 @@
 				rread(task, annotationAddr + offsetof(crashreporter_annotations_t, message), &msgAddr, sizeof(mach_vm_address_t));
 				if (msgAddr)
 				{
-					swiftErrorMessage = [self _readStringAtTaskAddress:msgAddr immutableOnly:NO maxLength:0];
-					if ([swiftErrorMessage hasSuffix:@"\n"])
+					if ([self respondsToSelector:@selector(_readStringAtTaskAddress:immutableOnly:maxLength:)])
+						swiftErrorMessage = [self _readStringAtTaskAddress:msgAddr immutableOnly:NO maxLength:0];
+					else if ([self respondsToSelector:@selector(_readStringAtTaskAddress:maxLength:immutableCheck:)])
+						swiftErrorMessage = [self _readStringAtTaskAddress:msgAddr maxLength:0 immutableCheck:NO];
+					
+					if (swiftErrorMessage && [swiftErrorMessage hasSuffix:@"\n"])
 						swiftErrorMessage = [swiftErrorMessage substringWithRange:NSMakeRange(0, swiftErrorMessage.length - 1)];
 				}
 			}
@@ -176,55 +237,84 @@
 		//get unsymbolicated backtrace:
 		__block NSMutableArray* callStackSymbols = nil;
 		__block NSInteger i = 0;
-		[self decodeBacktraceWithBlock:^(NSInteger unused, NSArray* symbols){
-			if (i++ == threadNum)
-				callStackSymbols = [symbols mutableCopy];
-		}];
+		if ([self respondsToSelector:@selector(decodeBacktraceWithBlock:)]) {
+			[self decodeBacktraceWithBlock:^(NSInteger unused, NSArray* symbols){
+				if (i++ == threadNum)
+					callStackSymbols = [symbols mutableCopy];
+			}];
 
-		//symbolicate backtrace:
-		NSArray* backtraces = CR4GetIvar<NSArray*>(self, "_backtraces");
-		NSArray* returnAddresses = backtraces.count > threadNum ? backtraces[threadNum] : nil;
-		if (callStackSymbols && returnAddresses)
-		{
-			if ([[callStackSymbols firstObject] hasPrefix:@"Thread"])
-				[callStackSymbols removeObjectAtIndex:0];
-			if ([[callStackSymbols firstObject] hasPrefix:@"Thread"])
-				[callStackSymbols removeObjectAtIndex:0];
-			
-			NSUInteger count = MIN(callStackSymbols.count, returnAddresses.count);
-			for (NSUInteger si = 0; si < count; si++)
+			//symbolicate backtrace:
+			if (CR4IvarExists(self, "_backtraces"))
 			{
-				uint64_t addr = [returnAddresses[si][@"Address"] unsignedLongLongValue];
-				NSDictionary* imgDict = [self binaryImageDictionaryForAddress:addr];
-				NSString* archStr = imgDict[@"BinaryInfoArchitectureKey"];
-				CSArchitecture arch = archStr.length ? CSArchitectureGetArchitectureForName([archStr UTF8String]) : CSArchitectureGetCurrent();
-				uuid_t uuid; 
-				const void* binaryUUID = [imgDict[@"BinaryInfoDwarfUUIDKey"] bytes];
-				if (binaryUUID)
+				NSArray* backtraces = CR4GetIvar<NSArray*>(self, "_backtraces");
+				NSArray* returnAddresses = backtraces.count > threadNum ? backtraces[threadNum] : nil;
+				if (callStackSymbols && returnAddresses)
 				{
-					memcpy((void*)uuid, binaryUUID, 16);
-					char* uuid_cstr = (char*)malloc(37);
-					uuid_cstr[36] = '\0';
-					uuid_unparse(uuid, uuid_cstr);
-					if (uuid_cstr)
-					{
-						//calculate padding
-						NSArray* comp = [callStackSymbols[si] componentsSeparatedByString:@" "];
-						NSString* str = [[comp subarrayWithRange:NSMakeRange(0, comp.count - 1)] componentsJoinedByString:@" "];
-						NSUInteger padding = str.length + 12;
+					if ([[callStackSymbols firstObject] hasPrefix:@"Thread"])
+						[callStackSymbols removeObjectAtIndex:0];
+					if ([[callStackSymbols firstObject] hasPrefix:@"Thread"])
+						[callStackSymbols removeObjectAtIndex:0];
 
-						NSString* uuidStr = [NSString stringWithUTF8String:uuid_cstr];
-						NSString* symbol = nameForRemoteSymbol(addr, imgDict[@"ExecutablePath"], uuidStr, [imgDict[@"StartAddress"] unsignedLongLongValue], arch);
-						callStackSymbols[si] = [callStackSymbols[si] stringByPaddingToLength:padding withString:@" " startingAtIndex:0];
-						if (symbol)
-							callStackSymbols[si] = [callStackSymbols[si] stringByAppendingFormat:@"\t// %@", symbol];
-						free(uuid_cstr);
+					NSUInteger count = MIN(callStackSymbols.count, returnAddresses.count);
+					for (NSUInteger si = 0; si < count; si++)
+					{
+						uint64_t addr = [returnAddresses[si][@"Address"] unsignedLongLongValue];
+						NSDictionary* imgDict = [self binaryImageDictionaryForAddress:addr];
+						NSString* archStr = imgDict[@"BinaryInfoArchitectureKey"];
+						CSArchitecture arch = archStr.length ? CSArchitectureGetArchitectureForName([archStr UTF8String]) : CSArchitectureGetCurrent();
+						uuid_t uuid;
+						const void* binaryUUID = [imgDict[@"BinaryInfoDwarfUUIDKey"] bytes];
+						if (binaryUUID)
+						{
+							memcpy((void*)uuid, binaryUUID, 16);
+							char* uuid_cstr = (char*)malloc(37);
+							uuid_cstr[36] = '\0';
+							uuid_unparse(uuid, uuid_cstr);
+							if (uuid_cstr)
+							{
+								//calculate padding
+								NSArray* comp = [callStackSymbols[si] componentsSeparatedByString:@" "];
+								NSString* str = [[comp subarrayWithRange:NSMakeRange(0, comp.count - 1)] componentsJoinedByString:@" "];
+								NSUInteger padding = str.length + 12;
+
+								NSString* uuidStr = [NSString stringWithUTF8String:uuid_cstr];
+								NSString* symbol = nameForRemoteSymbol(addr, imgDict[@"ExecutablePath"], uuidStr, [imgDict[@"StartAddress"] unsignedLongLongValue], arch);
+								callStackSymbols[si] = [callStackSymbols[si] stringByPaddingToLength:padding withString:@" " startingAtIndex:0];
+								if (symbol)
+									callStackSymbols[si] = [callStackSymbols[si] stringByAppendingFormat:@"\t// %@", symbol];
+								free(uuid_cstr);
+							}
+						}
 					}
 				}
+
+				info->stackSymbols = [callStackSymbols copy];
 			}
+		} else if (CR4IvarExists(self, "_threadInfos") && CR4IvarExists(self, "_usedImages")) {
+			NSArray* threadInfos = CR4GetIvar<NSArray*>(self, "_threadInfos");
+			NSArray* taskImages = CR4GetIvar<NSArray*>(self, "_usedImages");
+			NSUInteger idx = threadNum < threadInfos.count ? threadNum : 0;
+			NSArray* frames = threadInfos[idx][@"frames"];
+			NSMutableArray* symbols = [NSMutableArray array];
+			for (NSUInteger i = 0; i < frames.count; i++) {
+				NSDictionary* frame = frames[i];
+				NSDictionary* image = taskImages[[frame[@"imageIndex"] unsignedIntegerValue]];
+
+				NSUInteger imgBase = [image[@"base"] unsignedIntegerValue];
+				NSUInteger imgOffset = [frame[@"imageOffset"] unsignedIntegerValue];
+				NSString* symName = frame[@"symbol"];
+
+				#define P(s,l) s = [[s stringByPaddingToLength:l withString:@" " startingAtIndex:0] mutableCopy];
+				NSMutableString* symbol = [NSMutableString stringWithFormat:@"%llu ", (unsigned long long)i]; P(symbol, 4);
+				[symbol appendFormat:@"%@", image[@"name"]]; P(symbol, 40);
+				[symbol appendFormat:@"0x%0.16llx ", (unsigned long long)(imgBase + imgOffset)]; 
+				[symbol appendFormat:@"0x%llx + 0x%llx", (unsigned long long)imgBase, (unsigned long long)imgOffset]; P(symbol, 90);
+				[symbol appendFormat:@"// %@", symName];
+				[symbols addObject:symbol];
+			}
+			info->stackSymbols = symbols;
 		}
 
-		info->stackSymbols = [callStackSymbols copy];
 		self.exceptionInfo = info;
 		if (exception_codes)
 			free((void*)exception_codes);
@@ -245,7 +335,12 @@
 	if (self.exceptionInfo)
 	{
 		struct exception_info* info = self.exceptionInfo;
-		NSArray* images = CR4GetIvar<NSArray*>(self, "_binaryImages");
+		NSArray* images = nil;
+		if (CR4IvarExists(self, "_binaryImages"))
+			images = CR4GetIvar<NSArray*>(self, "_binaryImages");
+		else if (CR4IvarExists(self, "_taskImages"))
+			images = CR4GetIvar<NSArray*>(self, "_taskImages");
+		
 		NSString* terminationReason = CR4GetIvar<NSString*>(self, "_terminator_reason");
 
 		time_t crashTime = self.crashTime;
@@ -262,8 +357,12 @@
 															device];
 		
 		NSString* versionString = CR4GetIvar<NSString*>(self, "_short_vers");
-		if (!versionString.length)
+		if (!versionString.length && CR4IvarExists(self, "_bundle_vers"))
 			versionString = CR4GetIvar<NSString*>(self, "_bundle_vers");
+		if (!versionString.length && CR4IvarExists(self, "_bundle_info")) {
+			NSDictionary* bundleInfo = CR4GetIvar<NSDictionary*>(self, "_bundle_info");
+			versionString = [NSString stringWithFormat:@"%@", bundleInfo[@"CFBundleVersion"]];
+		}
 		if (versionString.length)
 			[logStr appendFormat:@"Bundle version: %@\n", versionString];
 		
@@ -293,37 +392,44 @@
 								stackSymbols];
 		
 		//register info:
-		const unsigned reg_columns = 3;
-		const unsigned column_width = 24;
-		for (unsigned int i = 0; i < info->register_info.size(); i += reg_columns)
+		if (info->register_info.size())
 		{
-			struct register_info reg_info = info->register_info[i];
-			NSString* rowStr = [NSString stringWithFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
-
-			if (i + 1 < info->register_info.size())
+			const unsigned reg_columns = 3;
+			const unsigned column_width = 24;
+			for (unsigned int i = 0; i < info->register_info.size(); i += reg_columns)
 			{
-				reg_info = info->register_info[i + 1];
-				rowStr = [rowStr stringByPaddingToLength:column_width withString:@" " startingAtIndex:0];
-				rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
-			}
-			if (i + 2 < info->register_info.size())
-			{
-				reg_info = info->register_info[i + 2];
-				rowStr = [rowStr stringByPaddingToLength:column_width * 2 withString:@" " startingAtIndex:0];
-				rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
-			}
-			if (i + 3 < info->register_info.size())
-				rowStr = [rowStr stringByAppendingFormat:@"\n"];
+				struct register_info reg_info = info->register_info[i];
+				NSString* rowStr = [NSString stringWithFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
 
-			[logStr appendString:rowStr];
+				if (i + 1 < info->register_info.size())
+				{
+					reg_info = info->register_info[i + 1];
+					rowStr = [rowStr stringByPaddingToLength:column_width withString:@" " startingAtIndex:0];
+					rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
+				}
+				if (i + 2 < info->register_info.size())
+				{
+					reg_info = info->register_info[i + 2];
+					rowStr = [rowStr stringByPaddingToLength:column_width * 2 withString:@" " startingAtIndex:0];
+					rowStr = [rowStr stringByAppendingFormat:@"%s: %p", reg_info.name, (void*)reg_info.value];
+				}
+				if (i + 3 < info->register_info.size())
+					rowStr = [rowStr stringByAppendingFormat:@"\n"];
+
+				[logStr appendString:rowStr];
+			}
 		}
 
 		//image infos:
-		[logStr appendString:@"\n\nLoaded images:\n"];
-		NSUInteger imageCount = images.count;
-		for (NSUInteger i = 0; i < imageCount; i++)
+		if (images)
 		{
-			[logStr appendFormat:@"%llu: %@\n", (unsigned long long)i, images[i][@"ExecutablePath"]];
+			[logStr appendString:@"\n\nLoaded images:\n"];
+			NSUInteger imageCount = images.count;
+			for (NSUInteger i = 0; i < imageCount; i++)
+			{
+				NSDictionary* imgInfo = getImageInfo((OSABinaryImageSegment*)images[i]);
+				[logStr appendFormat:@"%llu: %@\n", (unsigned long long)i, imgInfo[@"ExecutablePath"]];
+			}
 		}
 
 		 //extra info for the GUI to parse easily:
@@ -354,17 +460,8 @@
 
 		//notification:
 		NSString* notifContent = [NSString stringWithFormat:@"%@ crashed at %@", info->processName, dateString];
-		NSString* bundleID = @"com.muirey03.cr4shedgui";
-		NSString* title = @"Cr4shed";
 		NSDictionary* notifUserInfo = @{@"logPath" : path};
-		[CPNotification showAlertWithTitle:title
-									message:notifContent
-									userInfo:notifUserInfo
-									badgeCount:1
-									soundName:nil
-									delay:0.
-									repeats:NO
-									bundleId:bundleID];
+		showCr4shedNotification(notifContent, notifUserInfo);
 
 		if (info->exception_subtype)
 			free((void*)info->exception_subtype);
@@ -395,6 +492,16 @@
 	%orig;
 	[(CrashReport*)self generateCr4shedReport];
 }
+
+%new
+-(NSString*)cr4_signalName:(int)sig
+{
+	if ([self respondsToSelector:@selector(signalName)])
+		return [self signalName];
+	if ([self respondsToSelector:@selector(decode_signal)])
+		return [self decode_signal];
+	return @"SIGNUNKN";
+}
 %end
 
 %ctor
@@ -422,6 +529,9 @@
 
 		free((void*)classes);
 	}
+
+	if (!crashReportCls)
+		crashReportCls = %c(OSACrashReport);
 
 	%init(CrashReport = crashReportCls);
 }

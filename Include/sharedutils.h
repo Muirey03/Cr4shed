@@ -42,4 +42,5 @@ NSDictionary* getInfoFromLog(NSString* logContents);
 bool isBlacklisted(NSString* procName = nil);
 bool wantsLogJetsam();
 void lazyLoadBundle(NSString* const bundlePath);
+void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo);
 #endif

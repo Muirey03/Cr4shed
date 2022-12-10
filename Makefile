@@ -1,4 +1,4 @@
-export ARCHS = arm64 armv7 arm64e
+export ARCHS = arm64 arm64e
 export TARGET = iphone:clang:latest:10.0
 
 include $(THEOS)/makefiles/common.mk
@@ -14,7 +14,7 @@ ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN -Wno-shorten-64-to-32
 include $(THEOS_MAKE_PATH)/tweak.mk
 
 after-install::
-	install.exec "killall -9 backboardd"
+	install.exec "ldrestart"
 SUBPROJECTS += cr4shedgui
 SUBPROJECTS += cr4shedmach
 SUBPROJECTS += cr4shedjetsam

@@ -1,5 +1,0 @@
-#!/bin/sh
-echo "Killing cr4shedd..."
-launchctl unload /Library/LaunchDaemons/com.muirey03.cr4shedd.plist 2> /dev/null
-echo "Done!"
-exit 0

@@ -38,7 +38,7 @@ const char* mach_code_string(exception_type_t type, mach_exception_data_t codes,
 char* mach_exception_codes_string(mach_exception_data_t codes, mach_msg_type_number_t codeCnt);
 vm_prot_t vm_region_get_protection(mach_port_t task, vm_address_t address);
 const char* mach_exception_vm_info(mach_port_t task, exception_type_t type, mach_exception_data_t codes, mach_msg_type_number_t codeCnt);
-std::vector<struct register_info> get_register_info(mach_port_t thread);
+std::vector<struct register_info> get_register_info(_CR4_THREAD_STATE64* thread_state);
 uint64_t thread_number(mach_port_t task, mach_port_t thread);
 exception_type_t mach_exception_type(int sig, mach_exception_data_type_t* exception_subtype);
 void freeThreadArray(thread_act_port_array_t threads, mach_msg_type_number_t thread_count);
@@ -59,4 +59,8 @@ static inline Type CR4GetIvar(id self, const char* name)
 	void* pointer = ivar == NULL ? NULL : reinterpret_cast<char*>(self) + ivar_getOffset(ivar);
 #endif
 	return *reinterpret_cast<Type*>(pointer);
+}
+static inline bool CR4IvarExists(id self, const char* name)
+{
+	return !!class_getInstanceVariable(object_getClass(self), name);
 }

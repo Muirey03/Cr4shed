@@ -2,7 +2,6 @@
 @import Foundation;
 
 #import <MRYIPCCenter.h>
-#import <libnotifications.h>
 #import <sharedutils.h>
 #include <pthread.h>
 #include <time.h>
@@ -98,17 +97,8 @@
 -(void)sendNotification:(NSDictionary*)userInfo
 {
 	NSString* content = userInfo[@"content"];
-	NSString* bundleID = @"com.muirey03.cr4shedgui";
-	NSString* title = @"Cr4shed";
 	NSDictionary* notifUserInfo = userInfo[@"userInfo"];
-	[CPNotification showAlertWithTitle:title
-								message:content
-								userInfo:notifUserInfo
-								badgeCount:1
-								soundName:nil
-								delay:0.
-								repeats:NO
-								bundleId:bundleID];
+	showCr4shedNotification(content, notifUserInfo);
 }
 
 -(NSDictionary*)stringFromTime:(NSDictionary*)userInfo
