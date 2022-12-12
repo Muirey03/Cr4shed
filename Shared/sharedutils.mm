@@ -48,7 +48,7 @@ NSString* determineCulprit(NSArray* symbols)
 		NSString* image = getImage(symbol);
 		if (![image isEqualToString:@"Cr4shed.dylib"])
 		{
-			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image]])
+			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image]])	//TODO: fix for rootless jailbreaks
 				return image;
 		}
 	}
@@ -212,7 +212,7 @@ HBPreferences* sharedPreferences()
 	static HBPreferences* prefs = nil;
 	if (!prefs)
 	{
-		NSString* const frameworkPath = @"/usr/lib/Cephei.framework";
+		NSString* const frameworkPath = @"/usr/lib/Cephei.framework";	//TODO: fix for rootless jailbreaks
 		lazyLoadBundle(frameworkPath);
 		prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
 	}
@@ -270,7 +270,7 @@ void lazyLoadBundle(NSString* const bundlePath)
 
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
 {
-	void* handle = dlopen("/usr/lib/libnotifications.dylib", RTLD_NOW);
+	void* handle = dlopen("/usr/lib/libnotifications.dylib", RTLD_NOW);	//TODO: fix for rootless jailbreaks
 	if (handle) {
 		NSString* bundleID = @"com.muirey03.cr4shedgui";
 		NSString* title = @"Cr4shed";

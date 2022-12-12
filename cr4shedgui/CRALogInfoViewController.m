@@ -121,7 +121,7 @@
 {
 	if ([MFMailComposeViewController canSendMail])
 	{
-		NSString* culpritFile = [@"/Library/MobileSubstrate/DynamicLibraries" stringByAppendingPathComponent:_log.info[@"Culprit"]];
+		NSString* culpritFile = [@"/Library/MobileSubstrate/DynamicLibraries" stringByAppendingPathComponent:_log.info[@"Culprit"]];	//TODO: fix for rootless jailbreaks
 		NSString* package = packageForFile(culpritFile);
 		if (package)
 		{

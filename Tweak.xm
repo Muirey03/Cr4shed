@@ -267,9 +267,6 @@ inline BOOL isHardBlacklisted(NSString* procName)
 {
 	@autoreleasepool
 	{
-		if ([[NSBundle mainBundle].bundleIdentifier isEqualToString:@"com.apple.springboard"])
-			dlopen("/Library/MobileSubstrate/DynamicLibraries/Cr4shedSB.dylib", RTLD_NOW);
-
 		if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
 		{
 			oldHandler = NSGetUncaughtExceptionHandler();
