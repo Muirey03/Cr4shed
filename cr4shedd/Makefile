@@ -7,6 +7,5 @@ cr4shedd_CODESIGN_FLAGS = -Sent.plist
 cr4shedd_CFLAGS = -fobjc-arc -I../Include
 cr4shedd_LIBRARIES = mryipc MobileGestalt
 cr4shedd_LDFLAGS += -F../Frameworks/ -L../Libraries/
-ADDITIONAL_CFLAGS += -DTHEOS_LEAN_AND_MEAN -Wno-shorten-64-to-32
 
 include $(THEOS_MAKE_PATH)/tool.mk

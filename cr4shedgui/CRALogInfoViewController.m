@@ -18,7 +18,7 @@
 		_log = log;
 		_info = log.info;
 		self.title = [NSString stringWithFormat:@"%@ (%@)", log.processName, stringFromDate(log.date, CR4DateFormatTimeOnly)];
-	
+
 		_infoFormat = [@[
 			@{
 				@"DisplayName" : @"Crash Date",
@@ -79,7 +79,10 @@
 	if ([self.view respondsToSelector:@selector(safeAreaLayoutGuide)])
 		[footer.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor].active = YES;
 	else
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		[footer.bottomAnchor constraintEqualToAnchor:self.bottomLayoutGuide.topAnchor].active = YES;
+	#pragma clang diagnostic pop
 
 	UIButton* viewLogBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	viewLogBtn.translatesAutoresizingMaskIntoConstraints = NO;
@@ -131,7 +134,7 @@
 
 			MFMailComposeViewController* composeVC = [[MFMailComposeViewController alloc] init];
 			composeVC.mailComposeDelegate = self;
-			
+
 			NSString* subject = [NSString stringWithFormat:@"Cr4shed Report: %@ (%@)", packageName, version];
 			NSString* body = [NSString stringWithFormat:@"Your package (%@) has been determined to be the culprit of the attached crash.\n\nAdditional Details:\n\n", package];
 			NSData* logData = [_log.contents dataUsingEncoding:NSUTF8StringEncoding];
@@ -183,7 +186,7 @@
 		cell = [tableView dequeueReusableCellWithIdentifier:identifier];
 		if (!cell)
 			cell = [[UITableViewCell alloc] initWithStyle:style reuseIdentifier:identifier];
-		
+
 		cell.textLabel.text = infoRow[@"DisplayName"];
 		cell.detailTextLabel.text = infoRow[@"Value"];
 		if ([infoRow[@"HasAction"] boolValue])
