@@ -5,7 +5,7 @@ ifeq ($(ROOTLESS),1)
 export TARGET = iphone:clang:latest:15.0
 export THEOS_PACKAGE_SCHEME = rootless
 else
-export TARGET = iphone:clang:latest:10.0
+export TARGET = iphone:clang:latest:11.0
 endif
 
 include $(THEOS)/makefiles/common.mk

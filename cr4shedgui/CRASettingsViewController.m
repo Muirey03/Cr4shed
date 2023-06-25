@@ -8,13 +8,7 @@ void openURL(NSString* urlStr)
 {
 	NSURL* url = [NSURL URLWithString:urlStr];
 	UIApplication* app = [UIApplication sharedApplication];
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated"
-	if ([app respondsToSelector:@selector(openURL:options:completionHandler:)])
-		[app openURL:url options:@{} completionHandler:nil];
-	else
-		[app openURL:url];
-#pragma clang diagnostic pop
+	[app openURL:url options:@{} completionHandler:nil];
 }
 
 @implementation CRASettingsViewController

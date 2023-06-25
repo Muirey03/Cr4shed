@@ -67,7 +67,10 @@
 	_tableView.tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0., 0., 0., footerHeight)];
 	UIBlurEffect* blurEffect;
 	if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){13,0,0}])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+#pragma clang diagnostic pop
 	else
 		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
 	UIVisualEffectView* footer = [[UIVisualEffectView alloc] initWithEffect:blurEffect];

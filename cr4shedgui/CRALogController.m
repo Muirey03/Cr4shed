@@ -21,7 +21,10 @@
 		self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
 
 	if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){13,0,0}])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		self.view.backgroundColor = [UIColor systemBackgroundColor];
+#pragma clang diagnostic pop
 	else
 		self.view.backgroundColor = [UIColor whiteColor];
 
