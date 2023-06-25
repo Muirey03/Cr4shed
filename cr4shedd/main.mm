@@ -5,6 +5,7 @@
 #import <sharedutils.h>
 #import <pthread.h>
 #import <time.h>
+#import <rootless.h>
 
 @interface Cr4shedServer : NSObject
 -(BOOL)createDirectoryAtPath:(NSString*)path;
@@ -55,7 +56,7 @@
 	if ([fullFilename pathComponents].count > 1)
 		return nil;
 	//formulate path:
-	NSString* const cr4Dir = @"/var/mobile/Library/Cr4shed";
+	NSString* const cr4Dir = ROOT_PATH_NS_VAR(@"/var/mobile/Library/Cr4shed");
 	NSString* path = [cr4Dir stringByAppendingPathComponent:fullFilename];
 	//create cr4shed dir if neccessary:
 	//(deleting it if it is a file not a dir)

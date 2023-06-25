@@ -9,6 +9,7 @@
 #import <sharedutils.h>
 #import "cr4shed_mach.h"
 #import "mach_utils.h"
+#import <rootless.h>
 
 NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 {
@@ -442,9 +443,9 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 
 		// Create the dir if it doesn't exist already:
 		BOOL isDir;
-		BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/mobile/Library/Cr4shed" isDirectory:&isDir];
+		BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:ROOT_PATH_NS_VAR(@"/var/mobile/Library/Cr4shed") isDirectory:&isDir];
 		if (!dirExists)
-			dirExists = createDir(@"/var/mobile/Library/Cr4shed");
+			dirExists = createDir(ROOT_PATH_NS_VAR(@"/var/mobile/Library/Cr4shed"));
 		if (!dirExists) return; //should never happen, but just in case
 
 		// Get the date to use for the filename:
@@ -452,9 +453,10 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 
 		// Get the path for the new crash log:
 		NSString* path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@.log", info->processName, filenameDateStr];
-		for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:path]; i++)
+		for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:ROOT_PATH_NS_VAR(path)]; i++){
 			path = [NSString stringWithFormat:@"/var/mobile/Library/Cr4shed/%@@%@ (%d).log", info->processName, filenameDateStr, i];
-
+			path = ROOT_PATH_NS_VAR(path);
+		}
 		// Create the crash log
 		writeStringToFile(logStr, path);
 

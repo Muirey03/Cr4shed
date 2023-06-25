@@ -2,6 +2,7 @@
 #import "Process.h"
 #import "Log.h"
 #import <sharedutils.h>
+#import <rootless.h>
 
 @implementation CRAProcessManager
 +(instancetype)sharedInstance
@@ -27,7 +28,7 @@
 {
 	_processes = [NSMutableArray new];
 	//loop through all logs
-	NSString* const logsDirectory = @"/var/mobile/Library/Cr4shed";
+	NSString* const logsDirectory = ROOT_PATH_NS_VAR(@"/var/mobile/Library/Cr4shed");
 	NSMutableArray* files = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:logsDirectory error:nil] mutableCopy];
 	for (int i = 0; i < files.count; i++)
 	{
@@ -68,7 +69,6 @@
 			proc.latestDate = date;
 		}
 	}
-
 	[self sortProcs];
 }
 
@@ -84,7 +84,7 @@
 		if ([sortingMethod isEqualToString:@"Name"])
 			return [[a.name lowercaseString] compare:[b.name lowercaseString]];
 		NSDate* first = a.latestDate;
-		NSDate* second = b.latestDate; 
+		NSDate* second = b.latestDate;
 		return [second compare:first];
 	}];
 	for (int i = 0; i < _processes.count; i++)

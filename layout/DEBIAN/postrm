@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 echo "Killing cr4shedd..."
-launchctl unload /Library/LaunchDaemons/com.muirey03.cr4shedd.plist 2> /dev/null
+PREFIX=
+if [ -L "/var/jb" ] && [ -d "/var/jb" ]; then
+    PREFIX="/var/jb"
+fi
+launchctl unload "$PREFIX/Library/LaunchDaemons/com.muirey03.cr4shedd.plist" 2> /dev/null
 echo "Killing ReportCrash..."
 killall -9 ReportCrash 2> /dev/null
 echo "Killing ReportMemoryException..."
