@@ -1,9 +1,9 @@
 @import Foundation;
 
-#include <stdlib.h>
-#include <signal.h>
-#include <uuid/uuid.h>
-#include <mach/mach.h>
+#import <stdlib.h>
+#import <signal.h>
+#import <uuid/uuid.h>
+#import <mach/mach.h>
 #import <substrate.h>
 #import <symbolication.h>
 #import <sharedutils.h>
@@ -139,10 +139,10 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 	mach_port_t task = CR4GetIvar<mach_port_t>(self, "_task");
 	int threadNum = CR4GetIvar<int>(self, "_crashedThreadNumber");
 	int sig = CR4GetIvar<int>(self, "_signal");
-	
+
 	if (sig == 0 || sig == SIGKILL || isBlacklisted(self.procName))
 		return;
-	
+
 	mach_exception_data_type_t subtype = 0;
 	exception = mach_exception_type(sig, &subtype);
 	exception_codes[0] = subtype;
@@ -178,7 +178,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 		{
 			NSArray* threadInfos = CR4GetIvar<NSMutableArray*>(self, "_threadInfos");
 			NSDictionary* infoDict = threadInfos.count > threadNum ? threadInfos[threadNum] : nil;
-			info->thread_name = infoDict ? 
+			info->thread_name = infoDict ?
 				(infoDict[@"name"] ?: infoDict[@"queue"])
 				: nil;
 		}
@@ -200,7 +200,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 				images = CR4GetIvar<NSArray*>(self, "_binaryImages");
 			else if (CR4IvarExists(self, "_taskImages"))
 				images = CR4GetIvar<NSArray*>(self, "_binaryImages");
-			
+
 			mach_vm_address_t annotationAddr = 0;
 			if (images)
 			{
@@ -226,7 +226,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 						swiftErrorMessage = [self _readStringAtTaskAddress:msgAddr immutableOnly:NO maxLength:0];
 					else if ([self respondsToSelector:@selector(_readStringAtTaskAddress:maxLength:immutableCheck:)])
 						swiftErrorMessage = [self _readStringAtTaskAddress:msgAddr maxLength:0 immutableCheck:NO];
-					
+
 					if (swiftErrorMessage && [swiftErrorMessage hasSuffix:@"\n"])
 						swiftErrorMessage = [swiftErrorMessage substringWithRange:NSMakeRange(0, swiftErrorMessage.length - 1)];
 				}
@@ -307,7 +307,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 				#define P(s,l) s = [[s stringByPaddingToLength:l withString:@" " startingAtIndex:0] mutableCopy];
 				NSMutableString* symbol = [NSMutableString stringWithFormat:@"%llu ", (unsigned long long)i]; P(symbol, 4);
 				[symbol appendFormat:@"%@", image[@"name"]]; P(symbol, 40);
-				[symbol appendFormat:@"0x%0.16llx ", (unsigned long long)(imgBase + imgOffset)]; 
+				[symbol appendFormat:@"0x%0.16llx ", (unsigned long long)(imgBase + imgOffset)];
 				[symbol appendFormat:@"0x%llx + 0x%llx", (unsigned long long)imgBase, (unsigned long long)imgOffset]; P(symbol, 90);
 				[symbol appendFormat:@"// %@", symName];
 				[symbols addObject:symbol];
@@ -340,7 +340,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 			images = CR4GetIvar<NSArray*>(self, "_binaryImages");
 		else if (CR4IvarExists(self, "_taskImages"))
 			images = CR4GetIvar<NSArray*>(self, "_taskImages");
-		
+
 		NSString* terminationReason = CR4GetIvar<NSString*>(self, "_terminator_reason");
 
 		time_t crashTime = self.crashTime;
@@ -355,7 +355,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 															info->processName,
 															info->bundleID,
 															device];
-		
+
 		NSString* versionString = CR4GetIvar<NSString*>(self, "_short_vers");
 		if (!versionString.length && CR4IvarExists(self, "_bundle_vers"))
 			versionString = CR4GetIvar<NSString*>(self, "_bundle_vers");
@@ -365,7 +365,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 		}
 		if (versionString.length)
 			[logStr appendFormat:@"Bundle version: %@\n", versionString];
-		
+
 		NSString* culprit = determineCulprit(info->stackSymbols);
 		NSString* stackSymbols = [info->stackSymbols componentsJoinedByString:@"\n"];
 		[logStr appendFormat:  	@"\nException type: %@\n"
@@ -390,7 +390,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 								info->thread_num,
 								info->thread_name,
 								stackSymbols];
-		
+
 		//register info:
 		if (info->register_info.size())
 		{

@@ -76,7 +76,9 @@ void openURL(NSString* urlStr)
 {
 	HBPreferences* prefs = sharedPreferences();
 	[prefs setObject:value forKey:key];
+#if THEOS_PACKAGE_SCHEME != rootless
 	[prefs synchronize];
+#endif
 }
 
 -(void)loadView

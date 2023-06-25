@@ -3,8 +3,8 @@
 
 #import <MRYIPCCenter.h>
 #import <sharedutils.h>
-#include <pthread.h>
-#include <time.h>
+#import <pthread.h>
+#import <time.h>
 
 @interface Cr4shedServer : NSObject
 -(BOOL)createDirectoryAtPath:(NSString*)path;

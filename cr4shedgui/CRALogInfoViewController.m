@@ -5,6 +5,7 @@
 #import <sharedutils.h>
 #import "dpkgutils.h"
 #import "UIImage+UIKitImage.h"
+#import <rootless.h>
 
 @implementation CRALogInfoViewController
 {
@@ -124,7 +125,7 @@
 {
 	if ([MFMailComposeViewController canSendMail])
 	{
-		NSString* culpritFile = [@"/Library/MobileSubstrate/DynamicLibraries" stringByAppendingPathComponent:_log.info[@"Culprit"]];	//TODO: fix for rootless jailbreaks
+		NSString* culpritFile = ROOT_PATH_NS_VAR([@"/Library/MobileSubstrate/DynamicLibraries" stringByAppendingPathComponent:_log.info[@"Culprit"]]);
 		NSString* package = packageForFile(culpritFile);
 		if (package)
 		{

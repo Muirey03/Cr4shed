@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-#include <mach/mach.h>
+#import <mach/mach.h>
 
 #define CR4ProcsNeedRefreshNotificationName @"com.muirey03.cr4shed-procsNeedRefresh"
 #define CR4BlacklistDidChangeNotificationName @"com.muirey03.cr4shed-blacklistDidChange"

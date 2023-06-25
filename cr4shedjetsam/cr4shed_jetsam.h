@@ -109,7 +109,7 @@ resourceExceptionFromTask:error: (@28@0:8I16^@20)
 resourceExceptionFromLogFileHandle:error: (@32@0:8@16^@24)
 */
 
-#include <mach/mach.h>
+#import <mach/mach.h>
 
 @interface MemoryResourceException : NSObject
 @property (nonatomic, readonly) int pid;

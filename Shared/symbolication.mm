@@ -1,7 +1,7 @@
 @import Foundation;
 
-#include <dlfcn.h>
-#include <mach/mach.h>
+#import <dlfcn.h>
+#import <mach/mach.h>
 #import "symbolication.h"
 
 NSString* nameForRemoteSymbol(uint64_t addr, NSString* path, NSString* uuidStr, uint64_t imgAddr, CSArchitecture arch)

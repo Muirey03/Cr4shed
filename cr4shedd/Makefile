@@ -6,6 +6,6 @@ cr4shedd_INSTALL_PATH = /usr/libexec
 cr4shedd_CODESIGN_FLAGS = -Sent.plist
 cr4shedd_CFLAGS = -fobjc-arc -I../Include
 cr4shedd_LIBRARIES = mryipc MobileGestalt
-cr4shedd_LDFLAGS += -F../Frameworks/ -L../Libraries/
+cr4shedd_EXTRA_FRAMEWORKS = Cephei
 
 include $(THEOS_MAKE_PATH)/tool.mk

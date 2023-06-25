@@ -2,14 +2,15 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 #import <objc/runtime.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mach-o/dyld_images.h>
+#import <stdlib.h>
+#import <string.h>
+#import <mach-o/dyld_images.h>
 #import <MobileGestalt/MobileGestalt.h>
 #import <sharedutils.h>
 #import <Cephei/HBPreferences.h>
 #import <libnotifications.h>
-#include <dlfcn.h>
+#import <dlfcn.h>
+#import <rootless.h>
 
 extern "C" {
 
@@ -48,7 +49,8 @@ NSString* determineCulprit(NSArray* symbols)
 		NSString* image = getImage(symbol);
 		if (![image isEqualToString:@"Cr4shed.dylib"])
 		{
-			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image]])	//TODO: fix for rootless jailbreaks
+			NSString *path = [NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image];
+			if ([[NSFileManager defaultManager] fileExistsAtPath:ROOT_PATH_NS_VAR(path)])
 				return image;
 		}
 	}
@@ -212,7 +214,7 @@ HBPreferences* sharedPreferences()
 	static HBPreferences* prefs = nil;
 	if (!prefs)
 	{
-		NSString* const frameworkPath = @"/usr/lib/Cephei.framework";	//TODO: fix for rootless jailbreaks
+		NSString* const frameworkPath = ROOT_PATH_NS_VAR(@"/usr/lib/Cephei.framework");
 		lazyLoadBundle(frameworkPath);
 		prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
 	}
@@ -270,7 +272,7 @@ void lazyLoadBundle(NSString* const bundlePath)
 
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
 {
-	void* handle = dlopen("/usr/lib/libnotifications.dylib", RTLD_NOW);	//TODO: fix for rootless jailbreaks
+	void* handle = dlopen(ROOT_PATH("/usr/lib/libnotifications.dylib"), RTLD_NOW);
 	if (handle) {
 		NSString* bundleID = @"com.muirey03.cr4shedgui";
 		NSString* title = @"Cr4shed";
