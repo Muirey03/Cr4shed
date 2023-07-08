@@ -5,7 +5,7 @@
 extern char **environ;
 
 // https://stackoverflow.com/a/13065080
-char** getArray(NSArray *arr)
+char **getArray(NSArray *arr)
 {
 	unsigned count = [arr count];
 	char **array = (char **)malloc((count + 1) * sizeof(char*));
@@ -47,7 +47,8 @@ NSString* outputOfCommand(NSString* cmd, NSArray<NSString*>* args)
 	posix_spawn_file_actions_addclose(&action, out[0]);
 
 	pid_t pid;
-	posix_spawn(&pid, [cmd UTF8String], &action, NULL, getArray(args), environ);
+	char **cArgs = getArray(args);
+	posix_spawn(&pid, [cmd UTF8String], &action, NULL, cArgs, environ);
 	close(out[1]);
 	waitpid(pid, NULL, 0);
 
@@ -63,6 +64,7 @@ NSString* outputOfCommand(NSString* cmd, NSArray<NSString*>* args)
 	   return nil;
 
 	posix_spawn_file_actions_destroy(&action);
+	freeArray(cArgs);
 
 	return [NSString stringWithUTF8String:buff];
 }
