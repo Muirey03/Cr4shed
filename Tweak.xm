@@ -6,6 +6,7 @@
 #import <mach-o/dyld.h>
 #import <mach/mach.h>
 #import <dlfcn.h>
+#import <crt_externs.h>
 
 @interface Cr4shedServer : NSObject
 + (id)sharedInstance;
@@ -175,7 +176,7 @@ void createNSExceptionLog(NSException* e)
 	}
 
 	[info appendFormat:@"Call stack:\n%@", stackSymbols];
-	
+
 	NSMutableDictionary* extraInfo = [@{
 		@"Culprit" : culprit ?: @"Unknown",
 		@"NSExceptionReason" : e.reason ?: @""
@@ -228,11 +229,19 @@ void unhandledExceptionHandler(NSException* e)
 }
 %end
 
-inline BOOL isHardBlacklisted(NSString* procName)
+inline BOOL isHardBlacklisted(NSString* proc)
 {
+	if (!proc)
+		return YES;
+
+	NSArray *parts = [proc componentsSeparatedByString:@"/"];
+	if (![parts count])
+		return YES;
+
+	NSString *procName = [parts lastObject];
 	if (!procName)
 		return YES;
-	
+
 	NSArray<NSString*>* blacklisted = @[
 		@"ProtectedCloudKeySyncing",
 		@"gssc",
@@ -255,19 +264,16 @@ inline BOOL isHardBlacklisted(NSString* procName)
 		@"CircleJoinRequested",
 		@"suggestd"
 	];
-	for (NSString* bannedProc in blacklisted)
-	{
-		if (bannedProc && [procName isEqualToString:bannedProc])
-			return YES;
-	}
-	return NO;
+	return [blacklisted containsObject:procName];
 }
 
 %ctor
 {
 	@autoreleasepool
 	{
-		if (!isHardBlacklisted([[NSProcessInfo processInfo] processName]))
+		char *path = **_NSGetArgv();
+		NSString *proc = [NSString stringWithUTF8String:path];
+		if (!isHardBlacklisted(proc))
 		{
 			oldHandler = NSGetUncaughtExceptionHandler();
 			NSSetUncaughtExceptionHandler(&unhandledExceptionHandler);

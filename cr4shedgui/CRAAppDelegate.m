@@ -8,11 +8,9 @@
 
 -(BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
-	[UNUserNotificationCenter currentNotificationCenter].delegate = self;
-
 	//create UI:
 	_window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-	
+
 	_rootViewController = [[UINavigationController alloc] initWithRootViewController:[CRARootViewController new]];
 	_settingsViewController = [[UINavigationController alloc] initWithRootViewController:[CRASettingsViewController newSettingsController]];
 

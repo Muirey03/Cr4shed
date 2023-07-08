@@ -81,12 +81,15 @@
 	[footer.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;
 	[footer.heightAnchor constraintEqualToConstant:footerHeight].active = YES;
 	if ([self.view respondsToSelector:@selector(safeAreaLayoutGuide)])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		[footer.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor].active = YES;
+#pragma clang diagnostic pop
 	else
-	#pragma clang diagnostic push
-	#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		[footer.bottomAnchor constraintEqualToAnchor:self.bottomLayoutGuide.topAnchor].active = YES;
-	#pragma clang diagnostic pop
+#pragma clang diagnostic pop
 
 	UIButton* viewLogBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	viewLogBtn.translatesAutoresizingMaskIntoConstraints = NO;

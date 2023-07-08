@@ -79,7 +79,10 @@ void openURL(NSString* urlStr)
 {
 	[super loadView];
 	if ([self.navigationController.navigationBar respondsToSelector:@selector(setPrefersLargeTitles:)])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		self.navigationController.navigationBar.prefersLargeTitles = YES;
+#pragma clang diagnostic pop
 }
 
 -(void)viewDidAppear:(BOOL)arg1

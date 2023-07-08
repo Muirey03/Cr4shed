@@ -272,6 +272,8 @@ void lazyLoadBundle(NSString* const bundlePath)
 
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
 {
+	// This requires com.cokepokes.libnotifications and will simply not work w/o it
+	// TODO: Swap for stock impl
 	void* handle = dlopen(ROOT_PATH("/usr/lib/libnotifications.dylib"), RTLD_NOW);
 	if (handle) {
 		NSString* bundleID = @"com.muirey03.cr4shedgui";

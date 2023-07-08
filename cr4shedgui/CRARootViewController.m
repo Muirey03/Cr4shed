@@ -76,7 +76,10 @@
 	[super loadView];
 
 	if ([self.navigationController.navigationBar respondsToSelector:@selector(setPrefersLargeTitles:)])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		self.navigationController.navigationBar.prefersLargeTitles = YES;
+#pragma clang diagnostic pop
 
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
@@ -152,6 +155,8 @@
 
 #pragma mark - Table View Delegate
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 -(UISwipeActionsConfiguration*)tableView:(UITableView*)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath*)indexPath
 {
 	Class $UIContextualAction = objc_getClass("UIContextualAction");
@@ -176,6 +181,7 @@
 	UISwipeActionsConfiguration* config = [$UISwipeActionsConfiguration configurationWithActions:actions];
 	return config;
 }
+#pragma clang diagnostic pop
 
 -(void)tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath*)indexPath
 {
