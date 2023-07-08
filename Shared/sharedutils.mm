@@ -8,7 +8,7 @@
 #import <MobileGestalt/MobileGestalt.h>
 #import <sharedutils.h>
 #import <Cephei/HBPreferences.h>
-#import <libnotifications.h>
+// #import <libnotifications.h>
 #import <dlfcn.h>
 #import <rootless.h>
 
@@ -43,14 +43,15 @@ NSString* getImage(NSString* symbol)
 
 NSString* determineCulprit(NSArray* symbols)
 {
+	NSString *parentDir = ROOT_PATH_NS_VAR(@"/Library/MobileSubstrate/DynamicLibraries/");
 	for (int i = 0; i < symbols.count; i++)
 	{
 		NSString* symbol = symbols[i];
 		NSString* image = getImage(symbol);
 		if (![image isEqualToString:@"Cr4shed.dylib"])
 		{
-			NSString *path = [NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image];
-			if ([[NSFileManager defaultManager] fileExistsAtPath:ROOT_PATH_NS_VAR(path)])
+			NSString *path = [parentDir stringByAppendingPathComponent:image];
+			if ([[NSFileManager defaultManager] fileExistsAtPath:path])
 				return image;
 		}
 	}
@@ -273,18 +274,18 @@ void lazyLoadBundle(NSString* const bundlePath)
 void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
 {
 	// This requires com.cokepokes.libnotifications and will simply not work w/o it
-	// TODO: Swap for stock impl
-	void* handle = dlopen(ROOT_PATH("/usr/lib/libnotifications.dylib"), RTLD_NOW);
-	if (handle) {
-		NSString* bundleID = @"com.muirey03.cr4shedgui";
-		NSString* title = @"Cr4shed";
-		[objc_getClass("CPNotification") showAlertWithTitle:title
-										message:notifContent
-										userInfo:notifUserInfo
-										badgeCount:1
-										soundName:nil
-										delay:0.
-										repeats:NO
-										bundleId:bundleID];
-	}
+	// TODO: Swap for IPC/BBServer(?) impl
+	// void* handle = dlopen(ROOT_PATH("/usr/lib/libnotifications.dylib"), RTLD_NOW);
+	// if (handle) {
+	// 	NSString* bundleID = @"com.muirey03.cr4shedgui";
+	// 	NSString* title = @"Cr4shed";
+	// 	[objc_getClass("CPNotification") showAlertWithTitle:title
+	// 									message:notifContent
+	// 									userInfo:notifUserInfo
+	// 									badgeCount:1
+	// 									soundName:nil
+	// 									delay:0.
+	// 									repeats:NO
+	// 									bundleId:bundleID];
+	// }
 }
