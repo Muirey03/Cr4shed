@@ -271,8 +271,7 @@ inline BOOL isHardBlacklisted(NSString* proc)
 {
 	@autoreleasepool
 	{
-		char *path = **_NSGetArgv();
-		NSString *proc = [NSString stringWithUTF8String:path];
+		NSString *proc = [[NSString stringWithUTF8String:argv[0]] lastPathComponent];
 		if (!isHardBlacklisted(proc))
 		{
 			oldHandler = NSGetUncaughtExceptionHandler();
