@@ -453,9 +453,9 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 
 		// Get the path for the new crash log:
 		NSString *firstPath = [path stringByAppendingPathComponent:[NSString stringWithFormat:@"%@@%@.log", info->processName, filenameDateStr]];
-		for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:firstPath]; i++){
+		for (unsigned i = 1; [[NSFileManager defaultManager] fileExistsAtPath:firstPath]; i++)
 			path = [path stringByAppendingPathComponent:[NSString stringWithFormat:@"%@@%@ (%d).log", info->processName, filenameDateStr, i]];
-		}
+
 		// Create the crash log
 		writeStringToFile(logStr, path);
 

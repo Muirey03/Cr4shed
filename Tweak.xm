@@ -229,17 +229,9 @@ void unhandledExceptionHandler(NSException* e)
 }
 %end
 
-inline BOOL isHardBlacklisted(NSString* proc)
+inline BOOL isHardBlacklisted(NSString* procName)
 {
-	if (!proc)
-		return YES;
-
-	NSArray *parts = [proc componentsSeparatedByString:@"/"];
-	if (![parts count])
-		return YES;
-
-	NSString *procName = [parts lastObject];
-	if (!procName)
+	if (!procName || ![procName length])
 		return YES;
 
 	NSArray<NSString*>* blacklisted = @[
