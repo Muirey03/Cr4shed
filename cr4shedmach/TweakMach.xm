@@ -25,7 +25,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 	return nil;
 }
 
-%hook CrashReport
+%hook CrashReport // fixme
 %property (nonatomic, assign) time_t crashTime;
 %property (nonatomic, assign) uint64_t __far;
 %property (nonatomic, assign) struct exception_info* exceptionInfo;
@@ -505,7 +505,7 @@ NSDictionary* getImageInfo(OSABinaryImageSegment* img)
 }
 %end
 
-%ctor
+%ctor //fixme (also check bundle filter)
 {
 	Class crashReportCls = %c(CrashReport);
 	int numClasses = objc_getClassList(NULL, 0);

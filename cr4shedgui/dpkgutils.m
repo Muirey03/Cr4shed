@@ -29,7 +29,7 @@ void freeArray(char **array)
 	}
 }
 
-NSString* outputOfCommand(NSString* cmd, NSArray<NSString*>* args)
+NSString* outputOfCommand(NSString* cmd, NSArray<NSString*>* args) // fixme (?)
 {
 	// Sanity check
 	if (strstr(getenv("PATH"), "/var/jb") == NULL) {

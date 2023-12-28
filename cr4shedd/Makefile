@@ -11,6 +11,7 @@ cr4shedd_EXTRA_FRAMEWORKS = Cephei
 include $(THEOS_MAKE_PATH)/tool.mk
 
 internal-stage::
-ifeq ($(THEOS_PACKAGE_SCHEME),rootless)
-	$(ECHO_NOTHING)sed -i 's@/usr/libexec/cr4shedd@$(THEOS_PACKAGE_INSTALL_PREFIX)/usr/libexec/cr4shedd@' $(THEOS_STAGING_DIR)/Library/LaunchDaemons/com.muirey03.cr4shedd.plist$(ECHO_END)
+ifneq ($(THEOS_PACKAGE_SCHEME),)
+	@sed -i 's@/usr/libexec/$(TOOL_NAME)@$(THEOS_PACKAGE_INSTALL_PREFIX)/usr/libexec/$(TOOL_NAME)@' \
+		$(THEOS_STAGING_DIR)/Library/LaunchDaemons/com.muirey03.$(TOOL_NAME).plist
 endif

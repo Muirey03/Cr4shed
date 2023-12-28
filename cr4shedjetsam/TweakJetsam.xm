@@ -1,4 +1,5 @@
 @import Foundation;
+
 #import <sharedutils.h>
 #import <MRYIPCCenter.h>
 #import "../cr4shedmach/mach_utils.h"
@@ -16,20 +17,20 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 {
 	BOOL ret = %orig;
 	MRYIPCCenter* ipcCenter = [MRYIPCCenter centerNamed:@"com.muirey03.cr4sheddserver"];
-	
+
 	BOOL shouldLogJetsam = [[ipcCenter callExternalMethod:@selector(shouldLogJetsam) withArguments:@{}] boolValue];
 	if (!shouldLogJetsam)
 	{
 		return ret;
 	}
-	
+
 	NSNumber* blacklistedBool = [ipcCenter callExternalMethod:@selector(isProcessBlacklisted:) withArguments:self.execName];
 	if (!blacklistedBool.boolValue)
 	{
 		[self extractBacktraceInfo];
 		[self generateCr4shedReport];
 	}
-	
+
 	return ret;
 }
 
@@ -87,7 +88,7 @@ static NSString* serverWriteStringToFile(NSString* str, NSString* filename)
 	{
 		[memoryInfo appendFormat:@"Virtual memory size: 0x%zx bytes\n", (size_t)taskInfo.virtual_size];
 		[memoryInfo appendFormat:@"Resident memory size: 0x%zx bytes\n", (size_t)taskInfo.resident_size];
-		
+
 		thread_act_array_t threads = NULL;
 		mach_msg_type_number_t threadCount = 0;
 		kr = task_threads(task, &threads, &threadCount);

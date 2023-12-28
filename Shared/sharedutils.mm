@@ -271,7 +271,7 @@ void lazyLoadBundle(NSString* const bundlePath)
 		[bundle load];
 }
 
-void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
+void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo) // fixme
 {
 	// This requires com.cokepokes.libnotifications and will simply not work w/o it
 	// TODO: Swap for IPC/BBServer(?) impl

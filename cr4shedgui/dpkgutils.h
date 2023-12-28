@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+@import Foundation;
 
 NSString* outputOfCommand(NSString* cmd, NSArray<NSString*>* args);
 NSString* packageForFile(NSString* file);

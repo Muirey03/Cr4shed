@@ -22,5 +22,5 @@ SUBPROJECTS += cr4shedmach cr4shedjetsam cr4shedd frpreferences cr4shedgui
 
 include $(THEOS_MAKE_PATH)/aggregate.mk
 
-after-install::
-	install.exec "ldrestart"
+# after-install::
+# 	install.exec "ldrestart"

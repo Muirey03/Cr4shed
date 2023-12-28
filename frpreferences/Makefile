@@ -16,8 +16,4 @@ FRPreferences_PUBLIC_HEADERS = $(wildcard *.h)
 FRPreferences_INSTALL_PATH = /Library/Frameworks
 FRPreferences_CFLAGS = -fobjc-arc
 
-ifeq ($(THEOS_PACKAGE_SCHEME),rootless)
-FRPreferences_LDFLAGS += -install_name @rpath/FRPreferences.framework/FRPreferences
-endif
-
 include $(THEOS_MAKE_PATH)/framework.mk

@@ -70,7 +70,7 @@ void openURL(NSString* urlStr)
 {
 	HBPreferences* prefs = sharedPreferences();
 	[prefs setObject:value forKey:key];
-#if THEOS_PACKAGE_SCHEME != rootless
+#if THEOS_PACKAGE_SCHEME != rootless // fixme
 	[prefs synchronize];
 #endif
 }

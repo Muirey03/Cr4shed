@@ -21,14 +21,14 @@
 	return YES;
 }
 
--(void)applicationDidBecomeActive:(UIApplication*)application
+-(void)applicationDidBecomeActive:(UIApplication*)application // fixme (?)
 {
 	//reset badge number:
 	[application setApplicationIconBadgeNumber:0];
 }
 
 -(void)userNotificationCenter:(UNUserNotificationCenter*)center didReceiveNotificationResponse:(UNNotificationResponse*)response withCompletionHandler:(void (^)(void))completionHandler
-{
+{ // fixme (?)
 	NSString* logPath = response.notification.request.content.userInfo[@"logPath"];
 	if (logPath.length)
 		[self displayLog:logPath];

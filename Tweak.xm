@@ -1,5 +1,4 @@
-@import Foundation;
-
+#import "Tweak.h"
 #import <MRYIPCCenter.h>
 #import <sharedutils.h>
 #import "symbolication.h"
@@ -7,12 +6,6 @@
 #import <mach/mach.h>
 #import <dlfcn.h>
 #import <crt_externs.h>
-
-@interface Cr4shedServer : NSObject
-+ (id)sharedInstance;
--(NSDictionary*)sendNotification:(NSDictionary*)userInfo;
--(NSDictionary*)writeString:(NSDictionary*)userInfo;
-@end
 
 static NSString* writeStringToFile(NSString* str, NSString* filename)
 {
@@ -36,7 +29,7 @@ static NSString* getCallStack(NSException* e)
 	return symbolStr;
 }
 
-static void sendNotification(NSString* content, NSDictionary* userInfo)
+static void sendNotification(NSString* content, NSDictionary* userInfo) // fixme
 {
 	if (%c(Cr4shedServer))
 	{
