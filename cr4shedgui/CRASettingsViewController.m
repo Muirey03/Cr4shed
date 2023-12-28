@@ -8,13 +8,7 @@ void openURL(NSString* urlStr)
 {
 	NSURL* url = [NSURL URLWithString:urlStr];
 	UIApplication* app = [UIApplication sharedApplication];
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated"
-	if ([app respondsToSelector:@selector(openURL:options:completionHandler:)])
-		[app openURL:url options:@{} completionHandler:nil];
-	else
-		[app openURL:url];
-#pragma clang diagnostic pop
+	[app openURL:url options:@{} completionHandler:nil];
 }
 
 @implementation CRASettingsViewController
@@ -76,14 +70,19 @@ void openURL(NSString* urlStr)
 {
 	HBPreferences* prefs = sharedPreferences();
 	[prefs setObject:value forKey:key];
+#if THEOS_PACKAGE_SCHEME != rootless // fixme
 	[prefs synchronize];
+#endif
 }
 
 -(void)loadView
 {
 	[super loadView];
 	if ([self.navigationController.navigationBar respondsToSelector:@selector(setPrefersLargeTitles:)])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		self.navigationController.navigationBar.prefersLargeTitles = YES;
+#pragma clang diagnostic pop
 }
 
 -(void)viewDidAppear:(BOOL)arg1

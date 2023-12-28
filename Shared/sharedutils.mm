@@ -2,14 +2,15 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 #import <objc/runtime.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mach-o/dyld_images.h>
+#import <stdlib.h>
+#import <string.h>
+#import <mach-o/dyld_images.h>
 #import <MobileGestalt/MobileGestalt.h>
 #import <sharedutils.h>
 #import <Cephei/HBPreferences.h>
-#import <libnotifications.h>
-#include <dlfcn.h>
+// #import <libnotifications.h>
+#import <dlfcn.h>
+#import <rootless.h>
 
 extern "C" {
 
@@ -42,13 +43,15 @@ NSString* getImage(NSString* symbol)
 
 NSString* determineCulprit(NSArray* symbols)
 {
+	NSString *parentDir = ROOT_PATH_NS_VAR(@"/Library/MobileSubstrate/DynamicLibraries/");
 	for (int i = 0; i < symbols.count; i++)
 	{
 		NSString* symbol = symbols[i];
 		NSString* image = getImage(symbol);
 		if (![image isEqualToString:@"Cr4shed.dylib"])
 		{
-			if ([[NSFileManager defaultManager] fileExistsAtPath:[NSString stringWithFormat:@"/Library/MobileSubstrate/DynamicLibraries/%@", image]])	//TODO: fix for rootless jailbreaks
+			NSString *path = [parentDir stringByAppendingPathComponent:image];
+			if ([[NSFileManager defaultManager] fileExistsAtPath:path])
 				return image;
 		}
 	}
@@ -212,7 +215,7 @@ HBPreferences* sharedPreferences()
 	static HBPreferences* prefs = nil;
 	if (!prefs)
 	{
-		NSString* const frameworkPath = @"/usr/lib/Cephei.framework";	//TODO: fix for rootless jailbreaks
+		NSString* const frameworkPath = ROOT_PATH_NS_VAR(@"/usr/lib/Cephei.framework");
 		lazyLoadBundle(frameworkPath);
 		prefs = [[objc_getClass("HBPreferences") alloc] initWithIdentifier:@"com.muirey03.cr4shedprefs"];
 	}
@@ -268,19 +271,21 @@ void lazyLoadBundle(NSString* const bundlePath)
 		[bundle load];
 }
 
-void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo)
+void showCr4shedNotification(NSString* notifContent, NSDictionary* notifUserInfo) // fixme
 {
-	void* handle = dlopen("/usr/lib/libnotifications.dylib", RTLD_NOW);	//TODO: fix for rootless jailbreaks
-	if (handle) {
-		NSString* bundleID = @"com.muirey03.cr4shedgui";
-		NSString* title = @"Cr4shed";
-		[objc_getClass("CPNotification") showAlertWithTitle:title
-										message:notifContent
-										userInfo:notifUserInfo
-										badgeCount:1
-										soundName:nil
-										delay:0.
-										repeats:NO
-										bundleId:bundleID];
-	}
+	// This requires com.cokepokes.libnotifications and will simply not work w/o it
+	// TODO: Swap for IPC/BBServer(?) impl
+	// void* handle = dlopen(ROOT_PATH("/usr/lib/libnotifications.dylib"), RTLD_NOW);
+	// if (handle) {
+	// 	NSString* bundleID = @"com.muirey03.cr4shedgui";
+	// 	NSString* title = @"Cr4shed";
+	// 	[objc_getClass("CPNotification") showAlertWithTitle:title
+	// 									message:notifContent
+	// 									userInfo:notifUserInfo
+	// 									badgeCount:1
+	// 									soundName:nil
+	// 									delay:0.
+	// 									repeats:NO
+	// 									bundleId:bundleID];
+	// }
 }

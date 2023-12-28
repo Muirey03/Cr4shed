@@ -1,8 +1,8 @@
-#include <mach/mach.h>
-#include <vector>
+#import <mach/mach.h>
+#import <vector>
 #import <objc/runtime.h>
 #import <sharedutils.h>
-#include <time.h>
+#import <time.h>
 
 typedef struct
 {

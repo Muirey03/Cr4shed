@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+@import Foundation;
 
 @interface Log : NSObject
 @property (nonatomic, readonly) NSString* path;

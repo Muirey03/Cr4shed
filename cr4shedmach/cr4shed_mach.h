@@ -1,5 +1,5 @@
-#include <vector>
-#include <time.h>
+#import <vector>
+#import <time.h>
 
 struct exception_info
 {
@@ -20,7 +20,7 @@ struct exception_info
 -(NSString*)_methodDescription;
 @end
 
-@interface CrashReport : NSObject
+@interface CrashReport : NSObject // fixme
 @property (nonatomic, retain) NSString* procName;
 //%new properties
 @property (nonatomic, assign) time_t crashTime;

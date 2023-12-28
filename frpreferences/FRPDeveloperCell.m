@@ -25,7 +25,7 @@
     cell.image = image;
     cell.detailTextLabel.text = detail;
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    
+
     CGSize size = CGSizeMake(35,35);
     UIGraphicsBeginImageContextWithOptions(size, NO, UIScreen.mainScreen.scale);
     [self.image drawInRect:CGRectMake(0, 0, size.width, size.height)];
@@ -43,7 +43,7 @@
 
 - (void)didSelectFromTable:(FRPreferences *)viewController {
     [viewController.tableView deselectRowAtIndexPath:[viewController.tableView indexPathForCell:self] animated:YES];
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.url]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.url] options:@{} completionHandler:nil];
 }
 
 @end

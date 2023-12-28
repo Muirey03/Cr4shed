@@ -1,5 +1,5 @@
 @import UIKit;
-#import <FRPreferences.framework/Headers/FRPrefs.h>
+#import <FRPreferences/FRPrefs.h>
 
 @interface FRPreferences (Internal)
 -(instancetype)initTableWithSections:(NSArray*)sections;

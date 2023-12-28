@@ -6,7 +6,7 @@
 #import <sharedutils.h>
 #import "UIImage+UIKitImage.h"
 #import <Cephei/HBPreferences.h>
-#include <objc/runtime.h>
+#import <objc/runtime.h>
 
 @implementation ProcessCell
 -(instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString*)reuseIdentifier
@@ -14,7 +14,7 @@
 	if ((self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]))
 	{
 		self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-		
+
 		_countLbl = [[UILabel alloc] initWithFrame:CGRectZero];
 		_countLbl.font = [UIFont systemFontOfSize:15.];
 		_countLbl.textColor = [UIColor whiteColor];
@@ -36,7 +36,7 @@
 {
 	self.textLabel.text = _proc.name;
 	self.detailTextLabel.text = stringFromDate(_proc.latestDate, CR4DateFormatPretty);
-	_countLbl.text = [NSString stringWithFormat:@"%llu", (unsigned long long)_proc.logs.count];	
+	_countLbl.text = [NSString stringWithFormat:@"%llu", (unsigned long long)_proc.logs.count];
 
 	const CGFloat badgeHeight = 20.;
 	const CGFloat minBadgePadding = 10.;
@@ -62,7 +62,7 @@
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
 		//CR4ProcsNeedRefreshNotificationName
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshTable:) name:CR4ProcsNeedRefreshNotificationName object:nil];
-	
+
 		self.title = @"Cr4shed";
 		UIImage* itemImg = [[UIImage uikitImageNamed:@"UIButtonBarBookmarks"] resizeToWidth:25.];
 		self.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"Reports" image:itemImg tag:0];
@@ -76,7 +76,10 @@
 	[super loadView];
 
 	if ([self.navigationController.navigationBar respondsToSelector:@selector(setPrefersLargeTitles:)])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		self.navigationController.navigationBar.prefersLargeTitles = YES;
+#pragma clang diagnostic pop
 
 	self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
@@ -152,6 +155,8 @@
 
 #pragma mark - Table View Delegate
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 -(UISwipeActionsConfiguration*)tableView:(UITableView*)tableView trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath*)indexPath
 {
 	Class $UIContextualAction = objc_getClass("UIContextualAction");
@@ -176,6 +181,7 @@
 	UISwipeActionsConfiguration* config = [$UISwipeActionsConfiguration configurationWithActions:actions];
 	return config;
 }
+#pragma clang diagnostic pop
 
 -(void)tableView:(UITableView*)tableView didSelectRowAtIndexPath:(NSIndexPath*)indexPath
 {

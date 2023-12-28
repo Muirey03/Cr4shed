@@ -56,11 +56,11 @@
     [self updateTintColors];
 
     NSIndexPath *selectedRowIndexPath = [self.tableView indexPathForSelectedRow];
-    
+
     if (selectedRowIndexPath) {
         [self.tableView deselectRowAtIndexPath:selectedRowIndexPath animated:YES];
-        
-        [[self.navigationController transitionCoordinator] notifyWhenInteractionEndsUsingBlock:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+
+        [[self.navigationController transitionCoordinator] notifyWhenInteractionChangesUsingBlock:^(id<UIViewControllerTransitionCoordinatorContext> context) {
             if ([context isCancelled]) {
                 [self.tableView selectRowAtIndexPath:selectedRowIndexPath animated:YES scrollPosition:UITableViewScrollPositionNone];
             }
@@ -82,13 +82,13 @@
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)sectionIndex {
     FRPSection *section = self.sections[sectionIndex];
-    
+
     return section.cells.count;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     FRPCell *cell = [self cellForIndexPath:indexPath];
-    
+
     return (cell.height > 0)?cell.height:UITableViewAutomaticDimension;
 }
 

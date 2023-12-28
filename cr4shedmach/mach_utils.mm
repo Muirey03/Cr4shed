@@ -3,9 +3,9 @@
 
 #import "mach_utils.h"
 #import "symbolication.h"
-#include <stdlib.h>
-#include <string.h>
-#include <MRYIPCCenter.h>
+#import <stdlib.h>
+#import <string.h>
+#import <MRYIPCCenter.h>
 
 #define EXC_UNIX_BAD_SYSCALL 0x10000
 #define EXC_UNIX_BAD_PIPE 0x10001
@@ -40,7 +40,7 @@ const char* mach_code_string(exception_type_t type, mach_exception_data_t codes,
 {
 	if (codeCnt < 1)
 		return NULL;
-	
+
 	mach_exception_code_t code = codes[0];
 	mach_exception_subcode_t subcode = codeCnt > 1 ? codes[1] : 0;
 	const char* code_str = NULL;
@@ -118,7 +118,7 @@ vm_prot_t vm_region_get_protection(mach_port_t task, vm_address_t address)
 }
 
 const char* mach_exception_vm_info(mach_port_t task, exception_type_t type, mach_exception_data_t codes, mach_msg_type_number_t codeCnt)
-{	
+{
 	char* str = NULL;
 	if (codeCnt > 1 && type == EXC_BAD_ACCESS)
 	{
@@ -142,7 +142,7 @@ const char* mach_exception_vm_info(mach_port_t task, exception_type_t type, mach
 				rwx_str[1] = 'w';
 			if (prot & VM_PROT_EXECUTE)
 				rwx_str[2] = 'x';
-			
+
 			str = strdup(rwx_str);
 		}
 	}
@@ -299,7 +299,7 @@ mach_vm_address_t findSymbolInTask(mach_port_t task, const char* symbolName, NSS
 	CSSymbolicatorRef symbolicator = CSSymbolicatorCreateWithTask(task);
 	if (CSIsNull(symbolicator))
 		return 0;
-	
+
 	__block mach_vm_address_t addr = 0;
 	__block NSString* imagePath = nil;
 	CSSymbolicatorForeachSymbolAtTime(symbolicator, kCSNow, ^int(CSSymbolRef symbol){

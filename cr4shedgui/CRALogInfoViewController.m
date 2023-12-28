@@ -5,6 +5,7 @@
 #import <sharedutils.h>
 #import "dpkgutils.h"
 #import "UIImage+UIKitImage.h"
+#import <rootless.h>
 
 @implementation CRALogInfoViewController
 {
@@ -18,7 +19,7 @@
 		_log = log;
 		_info = log.info;
 		self.title = [NSString stringWithFormat:@"%@ (%@)", log.processName, stringFromDate(log.date, CR4DateFormatTimeOnly)];
-	
+
 		_infoFormat = [@[
 			@{
 				@"DisplayName" : @"Crash Date",
@@ -66,7 +67,10 @@
 	_tableView.tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0., 0., 0., footerHeight)];
 	UIBlurEffect* blurEffect;
 	if ([[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){13,0,0}])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+#pragma clang diagnostic pop
 	else
 		blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
 	UIVisualEffectView* footer = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
@@ -77,9 +81,15 @@
 	[footer.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor].active = YES;
 	[footer.heightAnchor constraintEqualToConstant:footerHeight].active = YES;
 	if ([self.view respondsToSelector:@selector(safeAreaLayoutGuide)])
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 		[footer.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor].active = YES;
+#pragma clang diagnostic pop
 	else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		[footer.bottomAnchor constraintEqualToAnchor:self.bottomLayoutGuide.topAnchor].active = YES;
+#pragma clang diagnostic pop
 
 	UIButton* viewLogBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
 	viewLogBtn.translatesAutoresizingMaskIntoConstraints = NO;
@@ -121,7 +131,7 @@
 {
 	if ([MFMailComposeViewController canSendMail])
 	{
-		NSString* culpritFile = [@"/Library/MobileSubstrate/DynamicLibraries" stringByAppendingPathComponent:_log.info[@"Culprit"]];	//TODO: fix for rootless jailbreaks
+		NSString* culpritFile = ROOT_PATH_NS_VAR([@"/Library/MobileSubstrate/DynamicLibraries" stringByAppendingPathComponent:_log.info[@"Culprit"]]);
 		NSString* package = packageForFile(culpritFile);
 		if (package)
 		{
@@ -131,7 +141,7 @@
 
 			MFMailComposeViewController* composeVC = [[MFMailComposeViewController alloc] init];
 			composeVC.mailComposeDelegate = self;
-			
+
 			NSString* subject = [NSString stringWithFormat:@"Cr4shed Report: %@ (%@)", packageName, version];
 			NSString* body = [NSString stringWithFormat:@"Your package (%@) has been determined to be the culprit of the attached crash.\n\nAdditional Details:\n\n", package];
 			NSData* logData = [_log.contents dataUsingEncoding:NSUTF8StringEncoding];
@@ -183,7 +193,7 @@
 		cell = [tableView dequeueReusableCellWithIdentifier:identifier];
 		if (!cell)
 			cell = [[UITableViewCell alloc] initWithStyle:style reuseIdentifier:identifier];
-		
+
 		cell.textLabel.text = infoRow[@"DisplayName"];
 		cell.detailTextLabel.text = infoRow[@"Value"];
 		if ([infoRow[@"HasAction"] boolValue])
